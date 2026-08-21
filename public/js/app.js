@@ -46,6 +46,41 @@
     showToast._t = setTimeout(() => toastEl.classList.remove('show'), 2200);
   }
 
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+
+  // ---------- Tooltip bij hover op een balk ----------
+  const tooltipEl = document.createElement('div');
+  tooltipEl.className = 'task-tooltip';
+  document.body.appendChild(tooltipEl);
+
+  function showTooltip(task, x, y) {
+    const catLabel = (categoryMap[task.categorie] && categoryMap[task.categorie].naam) || task.categorie;
+    const notesHtml = task.notities
+      ? `<div class="tt-notes">${escapeHtml(task.notities)}</div>`
+      : `<div class="tt-notes tt-empty">Geen notities</div>`;
+    tooltipEl.innerHTML =
+      `<strong>${escapeHtml(task.titel)}</strong>` +
+      `<span class="tt-meta">${escapeHtml(catLabel)} · ${task.start} t/m ${task.eind}</span>` +
+      notesHtml;
+    moveTooltip(x, y);
+    tooltipEl.classList.add('show');
+  }
+  function moveTooltip(x, y) {
+    const pad = 14;
+    let left = x + pad, top = y + pad;
+    const maxLeft = window.innerWidth - tooltipEl.offsetWidth - 10;
+    const maxTop = window.innerHeight - tooltipEl.offsetHeight - 10;
+    if (left > maxLeft) left = x - tooltipEl.offsetWidth - pad;
+    if (top > maxTop) top = y - tooltipEl.offsetHeight - pad;
+    tooltipEl.style.left = Math.max(10, left) + 'px';
+    tooltipEl.style.top = Math.max(10, top) + 'px';
+  }
+  function hideTooltip() { tooltipEl.classList.remove('show'); }
+
   // ---------- API ----------
   async function api(path, options) {
     const res = await fetch(path, {
@@ -280,6 +315,119 @@
     return bar;
   }
 
+  // ---------- Bewerkvenster ----------
+  function openEditModal(task) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+    const card = document.createElement('div');
+    card.className = 'modal-card';
+    card.innerHTML = `
+      <h3>Klus bewerken</h3>
+      <div class="field">
+        <label>Titel</label>
+        <input type="text" class="m-titel">
+      </div>
+      <div class="field">
+        <label>Categorie</label>
+        <select class="m-categorie"></select>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Startdatum</label>
+          <input type="date" class="m-start">
+        </div>
+        <div class="field">
+          <label>Einddatum</label>
+          <input type="date" class="m-eind">
+        </div>
+      </div>
+      <div class="field">
+        <label>Notities</label>
+        <textarea class="m-notities" rows="3"></textarea>
+      </div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" class="m-status" style="width:auto;">
+          Klaar
+        </label>
+      </div>
+      <div class="error-msg m-error"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn secondary danger m-delete">Verwijderen</button>
+        <div class="modal-actions-right">
+          <button type="button" class="btn secondary m-cancel">Annuleren</button>
+          <button type="button" class="btn m-save">Opslaan</button>
+        </div>
+      </div>
+    `;
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    const titelInput = card.querySelector('.m-titel');
+    const catSelect = card.querySelector('.m-categorie');
+    const startInput = card.querySelector('.m-start');
+    const eindInput = card.querySelector('.m-eind');
+    const notitiesInput = card.querySelector('.m-notities');
+    const statusInput = card.querySelector('.m-status');
+    const errorEl = card.querySelector('.m-error');
+
+    titelInput.value = task.titel;
+    categories.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.naam;
+      if (c.id === task.categorie) opt.selected = true;
+      catSelect.appendChild(opt);
+    });
+    startInput.value = task.start;
+    eindInput.value = task.eind;
+    notitiesInput.value = task.notities || '';
+    statusInput.checked = task.status === 'klaar';
+
+    card.querySelector('.m-cancel').addEventListener('click', () => overlay.remove());
+
+    card.querySelector('.m-delete').addEventListener('click', async () => {
+      if (!confirm(`"${task.titel}" verwijderen?`)) return;
+      try {
+        await api(`/api/tasks/${task.id}`, { method: 'DELETE' });
+        tasks = tasks.filter(t => t.id !== task.id);
+        overlay.remove();
+        render();
+        showToast('Klus verwijderd');
+      } catch (e) { errorEl.textContent = e.message; }
+    });
+
+    card.querySelector('.m-save').addEventListener('click', async () => {
+      const payload = {
+        titel: titelInput.value.trim(),
+        categorie: catSelect.value,
+        start: startInput.value,
+        eind: eindInput.value,
+        notities: notitiesInput.value.trim(),
+        status: statusInput.checked ? 'klaar' : 'open'
+      };
+      if (!payload.titel || !payload.start || !payload.eind) {
+        errorEl.textContent = 'Titel, startdatum en einddatum zijn verplicht';
+        return;
+      }
+      if (parseDate(payload.eind) < parseDate(payload.start)) {
+        errorEl.textContent = 'Einddatum ligt voor de startdatum';
+        return;
+      }
+      try {
+        const updated = await api(`/api/tasks/${task.id}`, { method: 'PUT', body: JSON.stringify(payload) });
+        Object.assign(task, updated);
+        overlay.remove();
+        render();
+        showToast('Klus bijgewerkt');
+      } catch (e) { errorEl.textContent = e.message; }
+    });
+
+    titelInput.focus();
+  }
+
   function attachDrag(bar, task, handleL, handleR) {
     let mode = null; // 'move' | 'resize-left' | 'resize-right'
     let startX = 0;
@@ -297,6 +445,7 @@
       curEndIdx = origEndIdx;
       bar.classList.add('dragging');
       bar.setPointerCapture(e.pointerId);
+      hideTooltip();
       e.stopPropagation();
     }
 
@@ -322,8 +471,12 @@
       if (!mode) return;
       bar.classList.remove('dragging');
       const changed = curStartIdx !== origStartIdx || curEndIdx !== origEndIdx;
+      const wasMove = mode === 'move';
       mode = null;
-      if (!changed) return;
+      if (!changed) {
+        if (wasMove) openEditModal(task);
+        return;
+      }
       const newStart = formatDate(addDays(range.start, curStartIdx));
       const newEnd = formatDate(addDays(range.start, curEndIdx));
       try {
@@ -345,6 +498,10 @@
     bar.addEventListener('pointermove', move);
     bar.addEventListener('pointerup', end);
     bar.addEventListener('pointercancel', end);
+
+    bar.addEventListener('mouseenter', (e) => { if (!mode) showTooltip(task, e.clientX, e.clientY); });
+    bar.addEventListener('mousemove', (e) => { if (!mode) moveTooltip(e.clientX, e.clientY); });
+    bar.addEventListener('mouseleave', () => hideTooltip());
   }
 
   // ---------- Formulier: nieuwe klus ----------

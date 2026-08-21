@@ -1,2 +1,2 @@
 # verhuis
-Mijn eigen verhuistoon
+Mijn eigen verhuistool

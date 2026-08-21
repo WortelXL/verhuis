@@ -1,0 +1,212 @@
+(function () {
+  const toastEl = document.getElementById('toast');
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toastEl.classList.remove('show'), 2400);
+  }
+
+  async function api(path, options) {
+    const res = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...options });
+    if (res.status === 401) { window.location.href = '/'; throw new Error('Niet ingelogd'); }
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Er ging iets mis');
+    }
+    return res.status === 204 ? null : res.json();
+  }
+
+  let currentUserId = null;
+
+  async function init() {
+    const me = await api('/api/me');
+    if (!me.loggedIn) { window.location.href = '/'; return; }
+    if (me.role !== 'admin') { window.location.href = '/planner'; return; }
+    document.getElementById('whoami').textContent = `${me.username} (beheerder)`;
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await api('/api/logout', { method: 'POST' });
+      window.location.href = '/';
+    });
+
+    await loadUsers();
+    await loadCategories();
+  }
+
+  // ---------- Gebruikers ----------
+  async function loadUsers() {
+    const users = await api('/api/users');
+    const me = await api('/api/me');
+    currentUserId = null; // server bepaalt zelf-check, we tonen alleen UI-hint
+    const tbody = document.getElementById('users-tbody');
+    tbody.innerHTML = '';
+    users.forEach(u => {
+      const tr = document.createElement('tr');
+
+      const tdName = document.createElement('td');
+      tdName.textContent = u.username;
+      if (u.username === me.username) {
+        const badge = document.createElement('span');
+        badge.className = 'you-badge';
+        badge.textContent = 'jij';
+        tdName.appendChild(document.createTextNode(' '));
+        tdName.appendChild(badge);
+      }
+
+      const tdRole = document.createElement('td');
+      const roleSelect = document.createElement('select');
+      ['gebruiker', 'admin'].forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r;
+        opt.textContent = r === 'admin' ? 'Beheerder' : 'Gebruiker';
+        if (u.role === r) opt.selected = true;
+        roleSelect.appendChild(opt);
+      });
+      roleSelect.addEventListener('change', async () => {
+        try {
+          await api(`/api/users/${u.id}`, { method: 'PUT', body: JSON.stringify({ role: roleSelect.value }) });
+          showToast(`Rol van ${u.username} bijgewerkt`);
+          loadUsers();
+        } catch (e) {
+          showToast(e.message);
+          roleSelect.value = u.role;
+        }
+      });
+      tdRole.appendChild(roleSelect);
+
+      const tdCreated = document.createElement('td');
+      tdCreated.textContent = u.createdAt ? new Date(u.createdAt).toLocaleDateString('nl-NL') : '';
+
+      const tdActions = document.createElement('td');
+      tdActions.className = 'actions-cell';
+
+      const resetBtn = document.createElement('button');
+      resetBtn.type = 'button';
+      resetBtn.className = 'btn secondary small';
+      resetBtn.textContent = 'Wachtwoord resetten';
+      resetBtn.addEventListener('click', async () => {
+        const pw = prompt(`Nieuw wachtwoord voor ${u.username} (minstens 6 tekens):`);
+        if (!pw) return;
+        try {
+          await api(`/api/users/${u.id}`, { method: 'PUT', body: JSON.stringify({ password: pw }) });
+          showToast('Wachtwoord bijgewerkt');
+        } catch (e) { showToast(e.message); }
+      });
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'btn secondary small danger';
+      delBtn.textContent = 'Verwijderen';
+      delBtn.addEventListener('click', async () => {
+        if (!confirm(`Gebruiker "${u.username}" verwijderen?`)) return;
+        try {
+          await api(`/api/users/${u.id}`, { method: 'DELETE' });
+          showToast('Gebruiker verwijderd');
+          loadUsers();
+        } catch (e) { showToast(e.message); }
+      });
+
+      tdActions.appendChild(resetBtn);
+      tdActions.appendChild(delBtn);
+
+      tr.appendChild(tdName);
+      tr.appendChild(tdRole);
+      tr.appendChild(tdCreated);
+      tr.appendChild(tdActions);
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById('user-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errorEl = document.getElementById('user-error');
+    errorEl.textContent = '';
+    const username = document.getElementById('new-username').value.trim();
+    const password = document.getElementById('new-password').value;
+    const role = document.getElementById('new-role').value;
+    try {
+      await api('/api/users', { method: 'POST', body: JSON.stringify({ username, password, role }) });
+      document.getElementById('user-form').reset();
+      showToast(`Gebruiker "${username}" toegevoegd`);
+      loadUsers();
+    } catch (err) {
+      errorEl.textContent = err.message;
+    }
+  });
+
+  // ---------- Categorieën ----------
+  async function loadCategories() {
+    const categories = await api('/api/categories');
+    const tbody = document.getElementById('categories-tbody');
+    tbody.innerHTML = '';
+    categories.forEach(c => {
+      const tr = document.createElement('tr');
+
+      const tdColor = document.createElement('td');
+      const colorInput = document.createElement('input');
+      colorInput.type = 'color';
+      colorInput.value = c.kleur;
+      colorInput.addEventListener('change', async () => {
+        try {
+          await api(`/api/categories/${c.id}`, { method: 'PUT', body: JSON.stringify({ kleur: colorInput.value }) });
+          showToast(`Kleur van "${c.naam}" bijgewerkt`);
+        } catch (e) { showToast(e.message); }
+      });
+      tdColor.appendChild(colorInput);
+
+      const tdName = document.createElement('td');
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = c.naam;
+      nameInput.className = 'inline-text-input';
+      nameInput.addEventListener('change', async () => {
+        try {
+          await api(`/api/categories/${c.id}`, { method: 'PUT', body: JSON.stringify({ naam: nameInput.value }) });
+          showToast('Naam bijgewerkt');
+        } catch (e) { showToast(e.message); }
+      });
+      tdName.appendChild(nameInput);
+
+      const tdActions = document.createElement('td');
+      tdActions.className = 'actions-cell';
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'btn secondary small danger';
+      delBtn.textContent = 'Verwijderen';
+      delBtn.addEventListener('click', async () => {
+        if (!confirm(`Categorie "${c.naam}" verwijderen? Bestaande klussen met deze categorie behouden hun kleur niet meer.`)) return;
+        try {
+          await api(`/api/categories/${c.id}`, { method: 'DELETE' });
+          showToast('Categorie verwijderd');
+          loadCategories();
+        } catch (e) { showToast(e.message); }
+      });
+      tdActions.appendChild(delBtn);
+
+      tr.appendChild(tdColor);
+      tr.appendChild(tdName);
+      tr.appendChild(tdActions);
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById('category-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errorEl = document.getElementById('category-error');
+    errorEl.textContent = '';
+    const naam = document.getElementById('new-cat-naam').value.trim();
+    const kleur = document.getElementById('new-cat-kleur').value;
+    try {
+      await api('/api/categories', { method: 'POST', body: JSON.stringify({ naam, kleur }) });
+      document.getElementById('category-form').reset();
+      document.getElementById('new-cat-kleur').value = '#1F3A5F';
+      showToast(`Categorie "${naam}" toegevoegd`);
+      loadCategories();
+    } catch (err) {
+      errorEl.textContent = err.message;
+    }
+  });
+
+  init().catch(err => showToast(err.message));
+})();

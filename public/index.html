@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verhuisplanner — Inloggen</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="login-shell">
+    <div class="login-card">
+      <div class="tape"></div>
+      <div class="eyebrow">Klusplanning · Verhuizing</div>
+      <h1>Verhuisplanner</h1>
+      <p class="sub">Log in om de tijdlijn te bekijken en aan te passen.</p>
+
+      <form id="login-form">
+        <div class="field">
+          <label for="username">Gebruikersnaam</label>
+          <input type="text" id="username" name="username" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="password">Wachtwoord</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" required>
+        </div>
+        <div class="error-msg" id="error-msg"></div>
+        <button type="submit" class="btn block">Inloggen</button>
+      </form>
+
+      <div class="login-footer">Standaard: admin / verhuizen2026 (wijzig via env vars)</div>
+    </div>
+  </div>
+  <script src="/js/login.js"></script>
+</body>
+</html>

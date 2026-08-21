@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verhuisplanner — Beheer</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <h1>Verhuisplanner</h1>
+      <span class="eyebrow">beheer</span>
+    </div>
+    <div class="topbar-right">
+      <span class="whoami" id="whoami"></span>
+      <a href="/planner" class="btn secondary">Naar tijdlijn</a>
+      <button class="btn secondary" id="logout-btn">Uitloggen</button>
+    </div>
+  </div>
+
+  <div class="admin-layout">
+
+    <section class="admin-section">
+      <h2>Gebruikers</h2>
+      <p class="section-sub">Beheerders mogen alles. Gebruikers mogen alleen de planning invullen.</p>
+
+      <table class="admin-table" id="users-table">
+        <thead>
+          <tr>
+            <th>Gebruikersnaam</th>
+            <th>Rol</th>
+            <th>Aangemaakt</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody"></tbody>
+      </table>
+
+      <form id="user-form" class="inline-form">
+        <div class="field">
+          <label for="new-username">Gebruikersnaam</label>
+          <input type="text" id="new-username" required>
+        </div>
+        <div class="field">
+          <label for="new-password">Wachtwoord</label>
+          <input type="password" id="new-password" minlength="6" required>
+        </div>
+        <div class="field">
+          <label for="new-role">Rol</label>
+          <select id="new-role">
+            <option value="gebruiker">Gebruiker</option>
+            <option value="admin">Beheerder</option>
+          </select>
+        </div>
+        <button type="submit" class="btn">Gebruiker toevoegen</button>
+      </form>
+      <div class="error-msg" id="user-error"></div>
+    </section>
+
+    <section class="admin-section">
+      <h2>Legenda &amp; categorieën</h2>
+      <p class="section-sub">Deze categorieën verschijnen in het formulier en als kleur op de tijdlijnbalken.</p>
+
+      <table class="admin-table" id="categories-table">
+        <thead>
+          <tr>
+            <th>Kleur</th>
+            <th>Naam</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="categories-tbody"></tbody>
+      </table>
+
+      <form id="category-form" class="inline-form">
+        <div class="field">
+          <label for="new-cat-naam">Naam</label>
+          <input type="text" id="new-cat-naam" required>
+        </div>
+        <div class="field">
+          <label for="new-cat-kleur">Kleur</label>
+          <input type="color" id="new-cat-kleur" value="#1F3A5F">
+        </div>
+        <button type="submit" class="btn">Categorie toevoegen</button>
+      </form>
+      <div class="error-msg" id="category-error"></div>
+    </section>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

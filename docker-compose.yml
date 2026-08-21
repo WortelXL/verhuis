@@ -1,0 +1,13 @@
+services:
+  verhuisplanner:
+    build: .
+    container_name: verhuisplanner
+    ports:
+      - "3000:3000"
+    environment:
+      - APP_USERNAME=admin
+      - APP_PASSWORD=verander-dit-wachtwoord
+      - SESSION_SECRET=verander-dit-in-iets-random-en-geheim
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

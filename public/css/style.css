@@ -424,7 +424,7 @@ a { color: inherit; }
   border-radius: 6px;
   display: flex;
   align-items: center;
-  padding: 0 10px;
+  padding: 0 8px;
   color: #fff;
   font-size: 12.5px;
   cursor: grab;
@@ -438,10 +438,38 @@ a { color: inherit; }
     transparent 12px
   );
   transition: box-shadow 0.12s ease;
+}
+
+.task-bar .bar-title {
+  flex: 1 1 auto;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.task-bar .bar-avatars {
+  flex: 0 0 auto;
+  display: flex;
+  margin-left: 6px;
+}
+
+.avatar-chip {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8.5px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: #fff;
+  border: 1.5px solid rgba(255,255,255,0.75);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+  margin-left: -6px;
+}
+.avatar-chip:first-child { margin-left: 0; }
 
 .task-bar:active { cursor: grabbing; }
 .task-bar.dragging { box-shadow: 0 6px 14px rgba(20,38,62,0.35); z-index: 5; }
@@ -517,6 +545,12 @@ a { color: inherit; }
 }
 .task-tooltip .tt-notes.tt-empty { opacity: 0.5; font-style: italic; }
 
+.task-tooltip .tt-people {
+  margin-top: 6px;
+  font-size: 11.5px;
+  opacity: 0.9;
+}
+
 /* ---------- Bewerkvenster (modal) ---------- */
 .modal-overlay {
   position: fixed;
@@ -560,6 +594,39 @@ a { color: inherit; }
 }
 
 .modal-actions-right { display: flex; gap: 8px; }
+
+/* ---------- Personen-selectie (formulier & bewerkvenster) ---------- */
+.person-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 4px 0;
+}
+
+.person-checklist .hint {
+  font-size: 12px;
+  color: var(--grey);
+  font-family: var(--font-mono);
+}
+
+.person-check-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--ink-dark);
+  cursor: pointer;
+  user-select: none;
+}
+
+.person-check-item input[type="checkbox"] { width: auto; margin: 0; }
+
+.person-check-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 
 /* ---------- Beheerpagina ---------- */
 .admin-layout {

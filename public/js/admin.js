@@ -31,9 +31,83 @@
     });
 
     await loadRangeSettings();
+    await loadPeople();
     await loadUsers();
     await loadCategories();
   }
+
+  // ---------- Personen ----------
+  async function loadPeople() {
+    const people = await api('/api/people');
+    const tbody = document.getElementById('people-tbody');
+    tbody.innerHTML = '';
+    people.forEach(p => {
+      const tr = document.createElement('tr');
+
+      const tdColor = document.createElement('td');
+      const colorInput = document.createElement('input');
+      colorInput.type = 'color';
+      colorInput.value = p.kleur;
+      colorInput.addEventListener('change', async () => {
+        try {
+          await api(`/api/people/${p.id}`, { method: 'PUT', body: JSON.stringify({ kleur: colorInput.value }) });
+          showToast(`Kleur van "${p.naam}" bijgewerkt`);
+        } catch (e) { showToast(e.message); }
+      });
+      tdColor.appendChild(colorInput);
+
+      const tdName = document.createElement('td');
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = p.naam;
+      nameInput.className = 'inline-text-input';
+      nameInput.addEventListener('change', async () => {
+        try {
+          await api(`/api/people/${p.id}`, { method: 'PUT', body: JSON.stringify({ naam: nameInput.value }) });
+          showToast('Naam bijgewerkt');
+        } catch (e) { showToast(e.message); }
+      });
+      tdName.appendChild(nameInput);
+
+      const tdActions = document.createElement('td');
+      tdActions.className = 'actions-cell';
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'btn secondary small danger';
+      delBtn.textContent = 'Verwijderen';
+      delBtn.addEventListener('click', async () => {
+        if (!confirm(`Persoon "${p.naam}" verwijderen? Deze wordt ook van alle klussen ontkoppeld.`)) return;
+        try {
+          await api(`/api/people/${p.id}`, { method: 'DELETE' });
+          showToast('Persoon verwijderd');
+          loadPeople();
+        } catch (e) { showToast(e.message); }
+      });
+      tdActions.appendChild(delBtn);
+
+      tr.appendChild(tdColor);
+      tr.appendChild(tdName);
+      tr.appendChild(tdActions);
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById('person-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errorEl = document.getElementById('person-error');
+    errorEl.textContent = '';
+    const naam = document.getElementById('new-person-naam').value.trim();
+    const kleur = document.getElementById('new-person-kleur').value;
+    try {
+      await api('/api/people', { method: 'POST', body: JSON.stringify({ naam, kleur }) });
+      document.getElementById('person-form').reset();
+      document.getElementById('new-person-kleur').value = '#1F3A5F';
+      showToast(`Persoon "${naam}" toegevoegd`);
+      loadPeople();
+    } catch (err) {
+      errorEl.textContent = err.message;
+    }
+  });
 
   // ---------- Tijdlijnbereik ----------
   async function loadRangeSettings() {

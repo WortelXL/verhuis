@@ -64,6 +64,11 @@ APP_USERNAME=admin APP_PASSWORD=test1234 npm start
 - **Klaar markeren**: vink het vakje voor de titel aan.
 - **Verwijderen**: klik op het kruisje naast een titel.
 - **Weeknummer**: staat als klein label boven elke maandag in de tijdlijn.
+- **Toewijzen aan personen**: kies bij het aanmaken of bewerken van een klus
+  één of meerdere personen. Ze verschijnen als gekleurde initialen op de
+  balk; personen zelf beheer je via de beheerpagina.
+- **Hover & bewerken**: hover over een balk voor de details en notities in
+  een tooltip; klik (zonder te slepen) op een balk om hem te bewerken.
 
 Alle wijzigingen worden direct opgeslagen (via de API) — een broodkruimel-
 melding rechtsonder bevestigt dit.
@@ -84,6 +89,10 @@ Via **Beheer** rechtsboven in de tijdlijn:
   voor automatisch. Klussen die buiten het ingestelde bereik vallen, blijven
   altijd zichtbaar — het bereik wordt dan tijdelijk verruimd zodat er nooit
   een balk "verdwijnt".
+- **Personen**: voeg personen toe (naam + kleur) om aan klussen te koppelen,
+  zodat je in één oogopslag ziet wie ermee bezig gaat. Dit zijn losse labels,
+  geen inlogaccounts — ze verschijnen als gekleurde initialen op de
+  tijdlijnbalk en in de tooltip.
 
 ## Techniek
 

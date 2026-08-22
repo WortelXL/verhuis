@@ -8,10 +8,13 @@
   const form = document.getElementById('task-form');
   const categorieSelect = document.getElementById('categorie');
   const legendEl = document.getElementById('legend');
+  const personChecklistEl = document.getElementById('person-checklist');
 
   let tasks = [];
   let categories = [];
   let categoryMap = {}; // id -> { naam, kleur }
+  let people = [];
+  let personMap = {}; // id -> { naam, kleur }
   let settings = { rangeStart: null, rangeEnd: null };
   let range = null; // { start: Date, totalDays: number }
 
@@ -53,6 +56,44 @@
     return d.innerHTML;
   }
 
+  function initials(naam) {
+    const parts = String(naam).trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  function namesFor(ids) {
+    return (ids || []).map(id => (personMap[id] && personMap[id].naam)).filter(Boolean);
+  }
+
+  // ---------- Personen-selectievakjes (herbruikt in formulier én bewerkvenster) ----------
+  function buildPersonChecklist(container, selectedIds) {
+    container.innerHTML = '';
+    if (!people.length) {
+      container.innerHTML = '<div class="hint">Nog geen personen. Voeg ze toe via Beheer.</div>';
+      return;
+    }
+    people.forEach(p => {
+      const label = document.createElement('label');
+      label.className = 'person-check-item';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = p.id;
+      cb.checked = (selectedIds || []).includes(p.id);
+      const swatch = document.createElement('span');
+      swatch.className = 'person-check-swatch';
+      swatch.style.background = p.kleur;
+      label.appendChild(cb);
+      label.appendChild(swatch);
+      label.appendChild(document.createTextNode(p.naam));
+      container.appendChild(label);
+    });
+  }
+  function selectedPersonIds(container) {
+    return Array.from(container.querySelectorAll('input:checked')).map(cb => cb.value);
+  }
+
   // ---------- Tooltip bij hover op een balk ----------
   const tooltipEl = document.createElement('div');
   tooltipEl.className = 'task-tooltip';
@@ -63,9 +104,14 @@
     const notesHtml = task.notities
       ? `<div class="tt-notes">${escapeHtml(task.notities)}</div>`
       : `<div class="tt-notes tt-empty">Geen notities</div>`;
+    const names = namesFor(task.toegewezenAan);
+    const peopleHtml = names.length
+      ? `<div class="tt-people">${escapeHtml(names.join(', '))}</div>`
+      : '';
     tooltipEl.innerHTML =
       `<strong>${escapeHtml(task.titel)}</strong>` +
       `<span class="tt-meta">${escapeHtml(catLabel)} · ${task.start} t/m ${task.eind}</span>` +
+      peopleHtml +
       notesHtml;
     moveTooltip(x, y);
     tooltipEl.classList.add('show');
@@ -137,6 +183,13 @@
 
   async function loadSettings() {
     settings = await api('/api/settings');
+  }
+
+  async function loadPeople() {
+    people = await api('/api/people');
+    personMap = {};
+    people.forEach(p => { personMap[p.id] = p; });
+    buildPersonChecklist(personChecklistEl, []);
   }
 
   // ---------- Bereik berekenen ----------
@@ -260,7 +313,10 @@
     titleSpan.className = 'title-text';
     titleSpan.textContent = task.titel;
     const catLabel = (categoryMap[task.categorie] && categoryMap[task.categorie].naam) || task.categorie;
-    titleSpan.title = `${catLabel} · ${task.start} t/m ${task.eind}` + (task.notities ? `\n${task.notities}` : '');
+    const assignedNames = namesFor(task.toegewezenAan);
+    titleSpan.title = `${catLabel} · ${task.start} t/m ${task.eind}`
+      + (assignedNames.length ? `\n${assignedNames.join(', ')}` : '')
+      + (task.notities ? `\n${task.notities}` : '');
 
     const delBtn = document.createElement('button');
     delBtn.className = 'del-btn';
@@ -309,7 +365,25 @@
     bar.style.background = (categoryMap[task.categorie] && categoryMap[task.categorie].kleur) || '#8A8578';
     bar.style.left = (startIdx * DAY_WIDTH) + 'px';
     bar.style.width = ((endIdx - startIdx + 1) * DAY_WIDTH - 4) + 'px';
-    bar.textContent = task.titel;
+
+    const titleEl = document.createElement('span');
+    titleEl.className = 'bar-title';
+    titleEl.textContent = task.titel;
+    bar.appendChild(titleEl);
+
+    const assigned = (task.toegewezenAan || []).map(id => personMap[id]).filter(Boolean);
+    if (assigned.length) {
+      const avatars = document.createElement('span');
+      avatars.className = 'bar-avatars';
+      assigned.slice(0, 4).forEach(p => {
+        const chip = document.createElement('span');
+        chip.className = 'avatar-chip';
+        chip.style.background = p.kleur;
+        chip.textContent = initials(p.naam);
+        avatars.appendChild(chip);
+      });
+      bar.appendChild(avatars);
+    }
 
     const handleL = document.createElement('div');
     handleL.className = 'handle left';
@@ -355,6 +429,10 @@
         <textarea class="m-notities" rows="3"></textarea>
       </div>
       <div class="field">
+        <label>Toegewezen aan</label>
+        <div class="person-checklist m-personen"></div>
+      </div>
+      <div class="field">
         <label style="display:flex;align-items:center;gap:8px;">
           <input type="checkbox" class="m-status" style="width:auto;">
           Klaar
@@ -378,6 +456,7 @@
     const eindInput = card.querySelector('.m-eind');
     const notitiesInput = card.querySelector('.m-notities');
     const statusInput = card.querySelector('.m-status');
+    const personenContainer = card.querySelector('.m-personen');
     const errorEl = card.querySelector('.m-error');
 
     titelInput.value = task.titel;
@@ -392,6 +471,7 @@
     eindInput.value = task.eind;
     notitiesInput.value = task.notities || '';
     statusInput.checked = task.status === 'klaar';
+    buildPersonChecklist(personenContainer, task.toegewezenAan || []);
 
     card.querySelector('.m-cancel').addEventListener('click', () => overlay.remove());
 
@@ -413,7 +493,8 @@
         start: startInput.value,
         eind: eindInput.value,
         notities: notitiesInput.value.trim(),
-        status: statusInput.checked ? 'klaar' : 'open'
+        status: statusInput.checked ? 'klaar' : 'open',
+        toegewezenAan: selectedPersonIds(personenContainer)
       };
       if (!payload.titel || !payload.start || !payload.eind) {
         errorEl.textContent = 'Titel, startdatum en einddatum zijn verplicht';
@@ -519,7 +600,8 @@
       categorie: document.getElementById('categorie').value,
       start: document.getElementById('start').value,
       eind: document.getElementById('eind').value,
-      notities: document.getElementById('notities').value.trim()
+      notities: document.getElementById('notities').value.trim(),
+      toegewezenAan: selectedPersonIds(personChecklistEl)
     };
     if (!data.titel || !data.start || !data.eind) return;
     if (parseDate(data.eind) < parseDate(data.start)) {
@@ -530,6 +612,7 @@
       const task = await api('/api/tasks', { method: 'POST', body: JSON.stringify(data) });
       tasks.push(task);
       form.reset();
+      buildPersonChecklist(personChecklistEl, []);
       render();
       showToast(`"${task.titel}" toegevoegd`);
     } catch (err) {
@@ -545,6 +628,7 @@
   async function init() {
     await loadMe();
     await loadCategories();
+    await loadPeople();
     await loadSettings();
     await loadTasks();
   }

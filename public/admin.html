@@ -41,6 +41,35 @@
     </section>
 
     <section class="admin-section">
+      <h2>Personen</h2>
+      <p class="section-sub">Deze personen kun je in de tijdlijn aan één of meerdere klussen koppelen, zodat je ziet wie ermee bezig gaat. Het zijn geen inlogaccounts.</p>
+
+      <table class="admin-table" id="people-table">
+        <thead>
+          <tr>
+            <th>Kleur</th>
+            <th>Naam</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="people-tbody"></tbody>
+      </table>
+
+      <form id="person-form" class="inline-form">
+        <div class="field">
+          <label for="new-person-naam">Naam</label>
+          <input type="text" id="new-person-naam" required>
+        </div>
+        <div class="field">
+          <label for="new-person-kleur">Kleur</label>
+          <input type="color" id="new-person-kleur" value="#1F3A5F">
+        </div>
+        <button type="submit" class="btn">Persoon toevoegen</button>
+      </form>
+      <div class="error-msg" id="person-error"></div>
+    </section>
+
+    <section class="admin-section">
       <h2>Gebruikers</h2>
       <p class="section-sub">Beheerders mogen alles. Gebruikers mogen alleen de planning invullen.</p>
 

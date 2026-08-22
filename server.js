@@ -14,9 +14,11 @@ const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
+const PEOPLE_FILE = path.join(DATA_DIR, 'people.json');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(TASKS_FILE)) fs.writeFileSync(TASKS_FILE, JSON.stringify([], null, 2));
+if (!fs.existsSync(PEOPLE_FILE)) fs.writeFileSync(PEOPLE_FILE, JSON.stringify([], null, 2));
 
 const DEFAULT_SETTINGS = { rangeStart: null, rangeEnd: null };
 if (!fs.existsSync(SETTINGS_FILE)) {
@@ -72,6 +74,8 @@ const readUsers = () => readJSON(USERS_FILE);
 const writeUsers = (u) => writeJSON(USERS_FILE, u);
 const readCategories = () => readJSON(CATEGORIES_FILE);
 const writeCategories = (c) => writeJSON(CATEGORIES_FILE, c);
+const readPeople = () => readJSON(PEOPLE_FILE);
+const writePeople = (p) => writeJSON(PEOPLE_FILE, p);
 const readSettings = () => {
   const s = readJSON(SETTINGS_FILE);
   return Array.isArray(s) ? { ...DEFAULT_SETTINGS } : { ...DEFAULT_SETTINGS, ...s };
@@ -127,7 +131,7 @@ app.get('/api/me', (req, res) => {
 app.get('/api/tasks', requireAuth, (req, res) => res.json(readTasks()));
 
 app.post('/api/tasks', requireAuth, (req, res) => {
-  const { titel, categorie, start, eind, notities } = req.body || {};
+  const { titel, categorie, start, eind, notities, toegewezenAan } = req.body || {};
   if (!titel || !start || !eind) {
     return res.status(400).json({ error: 'Titel, startdatum en einddatum zijn verplicht' });
   }
@@ -138,6 +142,7 @@ app.post('/api/tasks', requireAuth, (req, res) => {
     categorie: categorie || 'overig',
     start, eind,
     notities: notities || '',
+    toegewezenAan: Array.isArray(toegewezenAan) ? toegewezenAan.filter(x => typeof x === 'string') : [],
     status: 'open',
     createdBy: req.session.username,
     createdAt: new Date().toISOString()
@@ -151,9 +156,12 @@ app.put('/api/tasks/:id', requireAuth, (req, res) => {
   const tasks = readTasks();
   const idx = tasks.findIndex(t => t.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Taak niet gevonden' });
-  const allowed = ['titel', 'categorie', 'start', 'eind', 'notities', 'status'];
+  const allowed = ['titel', 'categorie', 'start', 'eind', 'notities', 'status', 'toegewezenAan'];
   for (const key of allowed) {
-    if (req.body[key] !== undefined) tasks[idx][key] = req.body[key];
+    if (req.body[key] !== undefined) {
+      if (key === 'toegewezenAan' && !Array.isArray(req.body[key])) continue;
+      tasks[idx][key] = req.body[key];
+    }
   }
   writeTasks(tasks);
   res.json(tasks[idx]);
@@ -204,6 +212,61 @@ app.delete('/api/categories/:id', requireAuth, requireAdmin, (req, res) => {
   if (categories.length === before) return res.status(404).json({ error: 'Categorie niet gevonden' });
   if (categories.length === 0) return res.status(400).json({ error: 'Er moet minstens 1 categorie overblijven' });
   writeCategories(categories);
+  res.json({ ok: true });
+});
+
+// ---- Personen (voor toewijzing aan klussen; iedereen leest, alleen admin schrijft) ----
+app.get('/api/people', requireAuth, (req, res) => res.json(readPeople()));
+
+app.post('/api/people', requireAuth, requireAdmin, (req, res) => {
+  const { naam, kleur } = req.body || {};
+  if (!naam) return res.status(400).json({ error: 'Naam is verplicht' });
+  if (kleur !== undefined && kleur !== '' && !/^#[0-9a-fA-F]{6}$/.test(kleur)) {
+    return res.status(400).json({ error: 'Ongeldige kleur' });
+  }
+  const people = readPeople();
+  const person = {
+    id: crypto.randomUUID(),
+    naam: String(naam).slice(0, 60),
+    kleur: kleur || '#1F3A5F'
+  };
+  people.push(person);
+  writePeople(people);
+  res.status(201).json(person);
+});
+
+app.put('/api/people/:id', requireAuth, requireAdmin, (req, res) => {
+  const people = readPeople();
+  const idx = people.findIndex(p => p.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Persoon niet gevonden' });
+  const { naam, kleur } = req.body || {};
+  if (naam !== undefined) people[idx].naam = String(naam).slice(0, 60);
+  if (kleur !== undefined) {
+    if (!/^#[0-9a-fA-F]{6}$/.test(kleur)) return res.status(400).json({ error: 'Ongeldige kleur' });
+    people[idx].kleur = kleur;
+  }
+  writePeople(people);
+  res.json(people[idx]);
+});
+
+app.delete('/api/people/:id', requireAuth, requireAdmin, (req, res) => {
+  let people = readPeople();
+  const before = people.length;
+  people = people.filter(p => p.id !== req.params.id);
+  if (people.length === before) return res.status(404).json({ error: 'Persoon niet gevonden' });
+  writePeople(people);
+
+  // Verwijder deze persoon ook uit alle klussen waar hij/zij aan toegewezen was
+  const tasks = readTasks();
+  let touched = false;
+  tasks.forEach(t => {
+    if (Array.isArray(t.toegewezenAan) && t.toegewezenAan.includes(req.params.id)) {
+      t.toegewezenAan = t.toegewezenAan.filter(id => id !== req.params.id);
+      touched = true;
+    }
+  });
+  if (touched) writeTasks(tasks);
+
   res.json({ ok: true });
 });
 

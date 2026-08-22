@@ -22,6 +22,25 @@
   <div class="admin-layout">
 
     <section class="admin-section">
+      <h2>Tijdlijnbereik</h2>
+      <p class="section-sub">Bepaal vanaf en tot welke datum de tijdlijn zichtbaar is. Laat een veld leeg voor automatisch (vanaf een week geleden tot 60 dagen vooruit, plus de periode van je klussen).</p>
+
+      <form id="range-form" class="inline-form">
+        <div class="field">
+          <label for="range-start">Zichtbaar vanaf</label>
+          <input type="date" id="range-start">
+        </div>
+        <div class="field">
+          <label for="range-end">Zichtbaar tot</label>
+          <input type="date" id="range-end">
+        </div>
+        <button type="submit" class="btn">Opslaan</button>
+        <button type="button" class="btn secondary" id="range-reset">Automatisch</button>
+      </form>
+      <div class="error-msg" id="range-error"></div>
+    </section>
+
+    <section class="admin-section">
       <h2>Gebruikers</h2>
       <p class="section-sub">Beheerders mogen alles. Gebruikers mogen alleen de planning invullen.</p>
 

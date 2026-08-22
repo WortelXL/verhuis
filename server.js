@@ -13,9 +13,15 @@ const DATA_DIR = path.join(__dirname, 'data');
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');
+const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(TASKS_FILE)) fs.writeFileSync(TASKS_FILE, JSON.stringify([], null, 2));
+
+const DEFAULT_SETTINGS = { rangeStart: null, rangeEnd: null };
+if (!fs.existsSync(SETTINGS_FILE)) {
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2));
+}
 
 const DEFAULT_CATEGORIES = [
   { id: 'verhuizen', naam: 'Verhuizen', kleur: '#1F3A5F' },
@@ -66,6 +72,11 @@ const readUsers = () => readJSON(USERS_FILE);
 const writeUsers = (u) => writeJSON(USERS_FILE, u);
 const readCategories = () => readJSON(CATEGORIES_FILE);
 const writeCategories = (c) => writeJSON(CATEGORIES_FILE, c);
+const readSettings = () => {
+  const s = readJSON(SETTINGS_FILE);
+  return Array.isArray(s) ? { ...DEFAULT_SETTINGS } : { ...DEFAULT_SETTINGS, ...s };
+};
+const writeSettings = (s) => writeJSON(SETTINGS_FILE, s);
 
 function publicUser(u) {
   return { id: u.id, username: u.username, role: u.role, createdAt: u.createdAt };
@@ -194,6 +205,32 @@ app.delete('/api/categories/:id', requireAuth, requireAdmin, (req, res) => {
   if (categories.length === 0) return res.status(400).json({ error: 'Er moet minstens 1 categorie overblijven' });
   writeCategories(categories);
   res.json({ ok: true });
+});
+
+// ---- Tijdlijninstellingen (iedereen leest, alleen admin schrijft) ----
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+app.get('/api/settings', requireAuth, (req, res) => {
+  res.json(readSettings());
+});
+
+app.put('/api/settings', requireAuth, requireAdmin, (req, res) => {
+  const { rangeStart, rangeEnd } = req.body || {};
+  const settings = readSettings();
+
+  for (const [key, val] of [['rangeStart', rangeStart], ['rangeEnd', rangeEnd]]) {
+    if (val === undefined) continue;
+    if (val === null || val === '') { settings[key] = null; continue; }
+    if (!DATE_RE.test(val)) {
+      return res.status(400).json({ error: 'Datum moet het formaat JJJJ-MM-DD hebben' });
+    }
+    settings[key] = val;
+  }
+  if (settings.rangeStart && settings.rangeEnd && settings.rangeEnd < settings.rangeStart) {
+    return res.status(400).json({ error: 'Einddatum ligt voor de startdatum' });
+  }
+  writeSettings(settings);
+  res.json(settings);
 });
 
 // ---- Gebruikersbeheer (alleen admin) ----

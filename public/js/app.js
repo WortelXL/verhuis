@@ -12,6 +12,7 @@
   let tasks = [];
   let categories = [];
   let categoryMap = {}; // id -> { naam, kleur }
+  let settings = { rangeStart: null, rangeEnd: null };
   let range = null; // { start: Date, totalDays: number }
 
   // ---------- Datumhelpers (lokale tijd, geen UTC-verschuiving) ----------
@@ -134,17 +135,23 @@
     if (adminLink && me.role === 'admin') adminLink.style.display = '';
   }
 
+  async function loadSettings() {
+    settings = await api('/api/settings');
+  }
+
   // ---------- Bereik berekenen ----------
   function computeRange() {
     const today = stripTime(new Date());
-    let min = addDays(today, -7);
-    let max = addDays(today, 60);
+    let min = settings.rangeStart ? parseDate(settings.rangeStart) : addDays(today, -7);
+    let max = settings.rangeEnd ? parseDate(settings.rangeEnd) : addDays(today, 60);
+    // Klussen buiten het ingestelde bereik blijven zichtbaar, zodat er nooit een balk "verdwijnt".
     tasks.forEach(t => {
       const s = addDays(parseDate(t.start), -3);
       const e = addDays(parseDate(t.eind), 3);
       if (s < min) min = s;
       if (e > max) max = e;
     });
+    if (max < min) max = min;
     const totalDays = daysBetween(min, max) + 1;
     return { start: min, totalDays };
   }
@@ -538,6 +545,7 @@
   async function init() {
     await loadMe();
     await loadCategories();
+    await loadSettings();
     await loadTasks();
   }
 

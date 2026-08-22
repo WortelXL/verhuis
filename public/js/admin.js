@@ -30,9 +30,42 @@
       window.location.href = '/';
     });
 
+    await loadRangeSettings();
     await loadUsers();
     await loadCategories();
   }
+
+  // ---------- Tijdlijnbereik ----------
+  async function loadRangeSettings() {
+    const settings = await api('/api/settings');
+    document.getElementById('range-start').value = settings.rangeStart || '';
+    document.getElementById('range-end').value = settings.rangeEnd || '';
+  }
+
+  document.getElementById('range-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errorEl = document.getElementById('range-error');
+    errorEl.textContent = '';
+    const rangeStart = document.getElementById('range-start').value || null;
+    const rangeEnd = document.getElementById('range-end').value || null;
+    try {
+      await api('/api/settings', { method: 'PUT', body: JSON.stringify({ rangeStart, rangeEnd }) });
+      showToast('Tijdlijnbereik opgeslagen');
+    } catch (err) {
+      errorEl.textContent = err.message;
+    }
+  });
+
+  document.getElementById('range-reset').addEventListener('click', async () => {
+    document.getElementById('range-start').value = '';
+    document.getElementById('range-end').value = '';
+    try {
+      await api('/api/settings', { method: 'PUT', body: JSON.stringify({ rangeStart: null, rangeEnd: null }) });
+      showToast('Tijdlijnbereik staat weer op automatisch');
+    } catch (err) {
+      document.getElementById('range-error').textContent = err.message;
+    }
+  });
 
   // ---------- Gebruikers ----------
   async function loadUsers() {

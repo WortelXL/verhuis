@@ -79,6 +79,11 @@ Via **Beheer** rechtsboven in de tijdlijn:
 - **Legenda / categorieën**: categorieën toevoegen, naam en kleur aanpassen,
   of verwijderen. Deze categorieën verschijnen automatisch in het
   "nieuwe klus"-formulier, de legenda en als kleur op de tijdlijnbalken.
+- **Tijdlijnbereik**: stel in vanaf en tot welke datum de tijdlijn zichtbaar
+  is (bijv. vanaf 1 september tot 15 oktober). Laat een van beide velden leeg
+  voor automatisch. Klussen die buiten het ingestelde bereik vallen, blijven
+  altijd zichtbaar — het bereik wordt dan tijdelijk verruimd zodat er nooit
+  een balk "verdwijnt".
 
 ## Techniek
 

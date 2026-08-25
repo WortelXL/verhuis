@@ -9,12 +9,15 @@
   const categorieSelect = document.getElementById('categorie');
   const legendEl = document.getElementById('legend');
   const personChecklistEl = document.getElementById('person-checklist');
+  const labelChecklistEl = document.getElementById('label-checklist');
 
   let tasks = [];
   let categories = [];
   let categoryMap = {}; // id -> { naam, kleur }
   let people = [];
   let personMap = {}; // id -> { naam, kleur }
+  let labels = [];
+  let labelMap = {}; // id -> { naam, icoon, kleur }
   let settings = { rangeStart: null, rangeEnd: null };
   let range = null; // { start: Date, totalDays: number }
 
@@ -94,6 +97,26 @@
     return Array.from(container.querySelectorAll('input:checked')).map(cb => cb.value);
   }
 
+  // ---------- Labels-selectievakjes ----------
+  function buildLabelChecklist(container, selectedIds) {
+    container.innerHTML = '';
+    if (!labels.length) {
+      container.innerHTML = '<div class="hint">Nog geen labels. Voeg ze toe via Beheer.</div>';
+      return;
+    }
+    labels.forEach(l => {
+      const label = document.createElement('label');
+      label.className = 'person-check-item';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = l.id;
+      cb.checked = (selectedIds || []).includes(l.id);
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(l.icoon + ' ' + l.naam));
+      container.appendChild(label);
+    });
+  }
+
   // ---------- Tooltip bij hover op een balk ----------
   const tooltipEl = document.createElement('div');
   tooltipEl.className = 'task-tooltip';
@@ -108,9 +131,14 @@
     const peopleHtml = names.length
       ? `<div class="tt-people">${escapeHtml(names.join(', '))}</div>`
       : '';
+    const taskLabels = (task.labels || []).map(id => labelMap[id]).filter(Boolean);
+    const labelsHtml = taskLabels.length
+      ? `<div class="tt-labels">${taskLabels.map(l => `<span class="tt-label-chip">${escapeHtml(l.icoon)} ${escapeHtml(l.naam)}</span>`).join('')}</div>`
+      : '';
     tooltipEl.innerHTML =
       `<strong>${escapeHtml(task.titel)}</strong>` +
       `<span class="tt-meta">${escapeHtml(catLabel)} · ${task.start} t/m ${task.eind}</span>` +
+      labelsHtml +
       peopleHtml +
       notesHtml;
     moveTooltip(x, y);
@@ -190,6 +218,13 @@
     personMap = {};
     people.forEach(p => { personMap[p.id] = p; });
     buildPersonChecklist(personChecklistEl, []);
+  }
+
+  async function loadLabels() {
+    labels = await api('/api/labels');
+    labelMap = {};
+    labels.forEach(l => { labelMap[l.id] = l; });
+    buildLabelChecklist(labelChecklistEl, []);
   }
 
   // ---------- Bereik berekenen ----------
@@ -314,7 +349,9 @@
     titleSpan.textContent = task.titel;
     const catLabel = (categoryMap[task.categorie] && categoryMap[task.categorie].naam) || task.categorie;
     const assignedNames = namesFor(task.toegewezenAan);
+    const taskLabelNames = (task.labels || []).map(id => labelMap[id]).filter(Boolean).map(l => `${l.icoon} ${l.naam}`);
     titleSpan.title = `${catLabel} · ${task.start} t/m ${task.eind}`
+      + (taskLabelNames.length ? `\n${taskLabelNames.join(', ')}` : '')
       + (assignedNames.length ? `\n${assignedNames.join(', ')}` : '')
       + (task.notities ? `\n${task.notities}` : '');
 
@@ -368,7 +405,9 @@
 
     const titleEl = document.createElement('span');
     titleEl.className = 'bar-title';
-    titleEl.textContent = task.titel;
+    const taskLabels = (task.labels || []).map(id => labelMap[id]).filter(Boolean);
+    const iconPrefix = taskLabels.length ? taskLabels.map(l => l.icoon).join(' ') + ' ' : '';
+    titleEl.textContent = iconPrefix + task.titel;
     bar.appendChild(titleEl);
 
     const assigned = (task.toegewezenAan || []).map(id => personMap[id]).filter(Boolean);
@@ -433,6 +472,10 @@
         <div class="person-checklist m-personen"></div>
       </div>
       <div class="field">
+        <label>Labels</label>
+        <div class="person-checklist m-labels"></div>
+      </div>
+      <div class="field">
         <label style="display:flex;align-items:center;gap:8px;">
           <input type="checkbox" class="m-status" style="width:auto;">
           Klaar
@@ -457,6 +500,7 @@
     const notitiesInput = card.querySelector('.m-notities');
     const statusInput = card.querySelector('.m-status');
     const personenContainer = card.querySelector('.m-personen');
+    const labelsContainer = card.querySelector('.m-labels');
     const errorEl = card.querySelector('.m-error');
 
     titelInput.value = task.titel;
@@ -472,6 +516,7 @@
     notitiesInput.value = task.notities || '';
     statusInput.checked = task.status === 'klaar';
     buildPersonChecklist(personenContainer, task.toegewezenAan || []);
+    buildLabelChecklist(labelsContainer, task.labels || []);
 
     card.querySelector('.m-cancel').addEventListener('click', () => overlay.remove());
 
@@ -494,7 +539,8 @@
         eind: eindInput.value,
         notities: notitiesInput.value.trim(),
         status: statusInput.checked ? 'klaar' : 'open',
-        toegewezenAan: selectedPersonIds(personenContainer)
+        toegewezenAan: selectedPersonIds(personenContainer),
+        labels: selectedPersonIds(labelsContainer)
       };
       if (!payload.titel || !payload.start || !payload.eind) {
         errorEl.textContent = 'Titel, startdatum en einddatum zijn verplicht';
@@ -601,7 +647,8 @@
       start: document.getElementById('start').value,
       eind: document.getElementById('eind').value,
       notities: document.getElementById('notities').value.trim(),
-      toegewezenAan: selectedPersonIds(personChecklistEl)
+      toegewezenAan: selectedPersonIds(personChecklistEl),
+      labels: selectedPersonIds(labelChecklistEl)
     };
     if (!data.titel || !data.start || !data.eind) return;
     if (parseDate(data.eind) < parseDate(data.start)) {
@@ -613,6 +660,7 @@
       tasks.push(task);
       form.reset();
       buildPersonChecklist(personChecklistEl, []);
+      buildLabelChecklist(labelChecklistEl, []);
       render();
       showToast(`"${task.titel}" toegevoegd`);
     } catch (err) {
@@ -629,6 +677,7 @@
     await loadMe();
     await loadCategories();
     await loadPeople();
+    await loadLabels();
     await loadSettings();
     await loadTasks();
   }

@@ -67,6 +67,9 @@ APP_USERNAME=admin APP_PASSWORD=test1234 npm start
 - **Toewijzen aan personen**: kies bij het aanmaken of bewerken van een klus
   één of meerdere personen. Ze verschijnen als gekleurde initialen op de
   balk; personen zelf beheer je via de beheerpagina.
+- **Labels met icoon**: kies bij het aanmaken of bewerken van een klus één of
+  meerdere labels (bijv. 📦 Fragiel, ⚡ Spoed). Labels zelf maak, wijzig en
+  verwijder je via de beheerpagina.
 - **Hover & bewerken**: hover over een balk voor de details en notities in
   een tooltip; klik (zonder te slepen) op een balk om hem te bewerken.
 
@@ -93,6 +96,9 @@ Via **Beheer** rechtsboven in de tijdlijn:
   zodat je in één oogopslag ziet wie ermee bezig gaat. Dit zijn losse labels,
   geen inlogaccounts — ze verschijnen als gekleurde initialen op de
   tijdlijnbalk en in de tooltip.
+- **Labels**: maak labels met een eigen icoontje (bijv. 📦 Fragiel, ⚡ Spoed),
+  koppel er één of meerdere aan een klus. Het icoon verschijnt vóór de titel
+  op de balk en de volledige lijst staat in de tooltip.
 
 ## Techniek
 

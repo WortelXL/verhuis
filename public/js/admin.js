@@ -31,10 +31,117 @@
     });
 
     await loadRangeSettings();
+    await loadLabels();
     await loadPeople();
     await loadUsers();
     await loadCategories();
   }
+
+  // ---------- Labels ----------
+  const ICON_PRESETS = ['🏷️', '📦', '⚡', '🔑', '🚚', '🧰', '📋', '⚠️', '🧹', '🐾', '👶', '🌿'];
+
+  (function initIconPresets() {
+    const wrap = document.getElementById('icon-presets');
+    ICON_PRESETS.forEach(icon => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'icon-preset-btn';
+      btn.textContent = icon;
+      btn.addEventListener('click', () => {
+        document.getElementById('new-label-icoon').value = icon;
+      });
+      wrap.appendChild(btn);
+    });
+  })();
+
+  async function loadLabels() {
+    const labels = await api('/api/labels');
+    const tbody = document.getElementById('labels-tbody');
+    tbody.innerHTML = '';
+    labels.forEach(l => {
+      const tr = document.createElement('tr');
+
+      const tdIcon = document.createElement('td');
+      const iconInput = document.createElement('input');
+      iconInput.type = 'text';
+      iconInput.value = l.icoon;
+      iconInput.maxLength = 8;
+      iconInput.className = 'inline-text-input icon-input';
+      iconInput.addEventListener('change', async () => {
+        try {
+          await api(`/api/labels/${l.id}`, { method: 'PUT', body: JSON.stringify({ icoon: iconInput.value }) });
+          showToast('Icoon bijgewerkt');
+        } catch (e) { showToast(e.message); }
+      });
+      tdIcon.appendChild(iconInput);
+
+      const tdName = document.createElement('td');
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = l.naam;
+      nameInput.className = 'inline-text-input';
+      nameInput.addEventListener('change', async () => {
+        try {
+          await api(`/api/labels/${l.id}`, { method: 'PUT', body: JSON.stringify({ naam: nameInput.value }) });
+          showToast('Naam bijgewerkt');
+        } catch (e) { showToast(e.message); }
+      });
+      tdName.appendChild(nameInput);
+
+      const tdColor = document.createElement('td');
+      const colorInput = document.createElement('input');
+      colorInput.type = 'color';
+      colorInput.value = l.kleur;
+      colorInput.addEventListener('change', async () => {
+        try {
+          await api(`/api/labels/${l.id}`, { method: 'PUT', body: JSON.stringify({ kleur: colorInput.value }) });
+          showToast(`Kleur van "${l.naam}" bijgewerkt`);
+        } catch (e) { showToast(e.message); }
+      });
+      tdColor.appendChild(colorInput);
+
+      const tdActions = document.createElement('td');
+      tdActions.className = 'actions-cell';
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'btn secondary small danger';
+      delBtn.textContent = 'Verwijderen';
+      delBtn.addEventListener('click', async () => {
+        if (!confirm(`Label "${l.naam}" verwijderen? Deze wordt ook van alle klussen verwijderd.`)) return;
+        try {
+          await api(`/api/labels/${l.id}`, { method: 'DELETE' });
+          showToast('Label verwijderd');
+          loadLabels();
+        } catch (e) { showToast(e.message); }
+      });
+      tdActions.appendChild(delBtn);
+
+      tr.appendChild(tdIcon);
+      tr.appendChild(tdName);
+      tr.appendChild(tdColor);
+      tr.appendChild(tdActions);
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById('label-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errorEl = document.getElementById('label-error');
+    errorEl.textContent = '';
+    const naam = document.getElementById('new-label-naam').value.trim();
+    const icoon = document.getElementById('new-label-icoon').value.trim() || '🏷️';
+    const kleur = document.getElementById('new-label-kleur').value;
+    try {
+      await api('/api/labels', { method: 'POST', body: JSON.stringify({ naam, icoon, kleur }) });
+      document.getElementById('label-form').reset();
+      document.getElementById('new-label-icoon').value = '🏷️';
+      document.getElementById('new-label-kleur').value = '#1F3A5F';
+      showToast(`Label "${naam}" toegevoegd`);
+      loadLabels();
+    } catch (err) {
+      errorEl.textContent = err.message;
+    }
+  });
 
   // ---------- Personen ----------
   async function loadPeople() {

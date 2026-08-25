@@ -41,6 +41,41 @@
     </section>
 
     <section class="admin-section">
+      <h2>Labels</h2>
+      <p class="section-sub">Labels met een icoontje die je aan één of meerdere klussen kunt koppelen (bijv. 📦 Fragiel, ⚡ Spoed, 🔑 Sleuteloverdracht).</p>
+
+      <table class="admin-table" id="labels-table">
+        <thead>
+          <tr>
+            <th>Icoon</th>
+            <th>Naam</th>
+            <th>Kleur</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="labels-tbody"></tbody>
+      </table>
+
+      <form id="label-form" class="inline-form">
+        <div class="field" style="min-width:120px;">
+          <label for="new-label-icoon">Icoon</label>
+          <input type="text" id="new-label-icoon" maxlength="8" placeholder="🏷️" value="🏷️">
+          <div class="icon-presets" id="icon-presets"></div>
+        </div>
+        <div class="field">
+          <label for="new-label-naam">Naam</label>
+          <input type="text" id="new-label-naam" required>
+        </div>
+        <div class="field">
+          <label for="new-label-kleur">Kleur</label>
+          <input type="color" id="new-label-kleur" value="#1F3A5F">
+        </div>
+        <button type="submit" class="btn">Label toevoegen</button>
+      </form>
+      <div class="error-msg" id="label-error"></div>
+    </section>
+
+    <section class="admin-section">
       <h2>Personen</h2>
       <p class="section-sub">Deze personen kun je in de tijdlijn aan één of meerdere klussen koppelen, zodat je ziet wie ermee bezig gaat. Het zijn geen inlogaccounts.</p>
 

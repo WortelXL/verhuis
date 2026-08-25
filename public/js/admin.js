@@ -65,7 +65,7 @@
       const iconInput = document.createElement('input');
       iconInput.type = 'text';
       iconInput.value = l.icoon;
-      iconInput.maxLength = 8;
+      iconInput.maxLength = 16;
       iconInput.className = 'inline-text-input icon-input';
       iconInput.addEventListener('change', async () => {
         try {

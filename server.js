@@ -276,6 +276,14 @@ app.delete('/api/people/:id', requireAuth, requireAdmin, (req, res) => {
 });
 
 // ---- Labels (met icoon; iedereen leest, alleen admin schrijft) ----
+function limitIcon(s) {
+  // Splitst op Unicode-codepoints (niet UTF-16-eenheden), zodat emoji met
+  // huidskleur, vlaggen of ZWJ-reeksen (bv. 👨‍👩‍👧) niet middenin afbreken.
+  const codepoints = Array.from(String(s || '').trim());
+  const joined = codepoints.slice(0, 16).join('');
+  return joined || '🏷️';
+}
+
 app.get('/api/labels', requireAuth, (req, res) => res.json(readLabels()));
 
 app.post('/api/labels', requireAuth, requireAdmin, (req, res) => {
@@ -288,7 +296,7 @@ app.post('/api/labels', requireAuth, requireAdmin, (req, res) => {
   const label = {
     id: crypto.randomUUID(),
     naam: String(naam).slice(0, 40),
-    icoon: (icoon || '🏷️').slice(0, 8),
+    icoon: limitIcon(icoon),
     kleur: kleur || '#1F3A5F'
   };
   labels.push(label);
@@ -302,7 +310,7 @@ app.put('/api/labels/:id', requireAuth, requireAdmin, (req, res) => {
   if (idx === -1) return res.status(404).json({ error: 'Label niet gevonden' });
   const { naam, icoon, kleur } = req.body || {};
   if (naam !== undefined) labels[idx].naam = String(naam).slice(0, 40);
-  if (icoon !== undefined) labels[idx].icoon = String(icoon).slice(0, 8) || '🏷️';
+  if (icoon !== undefined) labels[idx].icoon = limitIcon(icoon);
   if (kleur !== undefined) {
     if (!/^#[0-9a-fA-F]{6}$/.test(kleur)) return res.status(400).json({ error: 'Ongeldige kleur' });
     labels[idx].kleur = kleur;

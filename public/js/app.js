@@ -20,6 +20,7 @@
   let labelMap = {}; // id -> { naam, icoon, kleur }
   let settings = { rangeStart: null, rangeEnd: null };
   let range = null; // { start: Date, totalDays: number }
+  let pendingTodoId = null;
 
   // ---------- Datumhelpers (lokale tijd, geen UTC-verschuiving) ----------
   function pad(n) { return String(n).padStart(2, '0'); }
@@ -689,6 +690,20 @@
       buildLabelChecklist(labelChecklistEl, []);
       render();
       showToast(`"${task.titel}" toegevoegd`);
+
+      if (pendingTodoId) {
+        try {
+          await api(`/api/todos/${pendingTodoId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ klaar: true, taskId: task.id })
+          });
+          showToast(`"${task.titel}" ingepland vanuit je to-do lijst`);
+        } catch (e) { /* to-do koppelen is niet kritiek, klus staat al op de tijdlijn */ }
+        pendingTodoId = null;
+        const url = new URL(window.location.href);
+        url.searchParams.delete('todo');
+        window.history.replaceState({}, '', url);
+      }
     } catch (err) {
       showToast(err.message);
     }
@@ -707,6 +722,29 @@
     await loadLabels();
     await loadSettings();
     await loadTasks();
+    await applyPendingTodo();
+  }
+
+  // ---------- Vanuit de to-do lijst een klus voorinvullen ----------
+  async function applyPendingTodo() {
+    const params = new URLSearchParams(window.location.search);
+    const todoId = params.get('todo');
+    if (!todoId) return;
+    try {
+      const allTodos = await api('/api/todos');
+      const todo = allTodos.find(t => t.id === todoId);
+      if (!todo) return;
+      if (todo.taskId) {
+        showToast('Deze to-do staat al op de tijdlijn');
+        return;
+      }
+      pendingTodoId = todo.id;
+      const titelInput = document.getElementById('titel');
+      titelInput.value = todo.tekst;
+      titelInput.focus();
+      titelInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      showToast('Kies een datum en klik op "Toevoegen aan tijdlijn" om in te plannen');
+    } catch (e) { /* stil negeren, formulier blijft gewoon leeg */ }
   }
 
   init().catch(err => showToast(err.message));

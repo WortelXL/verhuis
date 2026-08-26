@@ -72,6 +72,11 @@ APP_USERNAME=admin APP_PASSWORD=test1234 npm start
   verwijder je via de beheerpagina.
 - **Versie & changelog**: rechtsboven in de app staat het huidige
   versienummer. Klik erop voor een lijst met recente wijzigingen.
+- **To-do lijst**: aparte pagina (via de knop "To-do") om losse taken snel
+  vast te leggen zonder meteen een datum te kiezen. Klik op "Inplannen →" om
+  een to-do als klus op de tijdlijn te zetten — dat opent de tijdlijn met de
+  titel al ingevuld, jij kiest alleen nog de datum. De to-do wordt daarna
+  automatisch afgevinkt en gekoppeld.
 - **Hover & bewerken**: hover over een balk voor de details en notities in
   een tooltip; klik (zonder te slepen) op een balk om hem te bewerken.
 

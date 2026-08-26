@@ -15,6 +15,7 @@ const APP_VERSION = packageJson.version;
 // Changelog: bij elke functionele wijziging hier een nieuwe regel bovenaan toevoegen
 // en de version in package.json ophogen. Wordt getoond in de app via /api/version.
 const CHANGELOG = [
+  { version: '0.0.9', wijzigingen: ['Nieuwe To-do-pagina: losse taken vastleggen en met één klik inplannen op de tijdlijn.'] },
   { version: '0.0.8', wijzigingen: ['Versiebeheer: het versienummer en de changelog zijn nu zichtbaar in de app voor ingelogde gebruikers.'] },
   { version: '0.0.7', wijzigingen: ['Labels met eigen icoon: aanmaken, bewerken en verwijderen via Beheer, koppelen aan één of meerdere klussen.'] },
   { version: '0.0.6', wijzigingen: ['Personen toevoegen via Beheer en aan klussen koppelen, zichtbaar als gekleurde initialen op de balk.'] },
@@ -31,11 +32,13 @@ const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const PEOPLE_FILE = path.join(DATA_DIR, 'people.json');
 const LABELS_FILE = path.join(DATA_DIR, 'labels.json');
+const TODOS_FILE = path.join(DATA_DIR, 'todos.json');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(TASKS_FILE)) fs.writeFileSync(TASKS_FILE, JSON.stringify([], null, 2));
 if (!fs.existsSync(PEOPLE_FILE)) fs.writeFileSync(PEOPLE_FILE, JSON.stringify([], null, 2));
 if (!fs.existsSync(LABELS_FILE)) fs.writeFileSync(LABELS_FILE, JSON.stringify([], null, 2));
+if (!fs.existsSync(TODOS_FILE)) fs.writeFileSync(TODOS_FILE, JSON.stringify([], null, 2));
 
 const DEFAULT_SETTINGS = { rangeStart: null, rangeEnd: null };
 if (!fs.existsSync(SETTINGS_FILE)) {
@@ -95,6 +98,8 @@ const readPeople = () => readJSON(PEOPLE_FILE);
 const writePeople = (p) => writeJSON(PEOPLE_FILE, p);
 const readLabels = () => readJSON(LABELS_FILE);
 const writeLabels = (l) => writeJSON(LABELS_FILE, l);
+const readTodos = () => readJSON(TODOS_FILE);
+const writeTodos = (t) => writeJSON(TODOS_FILE, t);
 const readSettings = () => {
   const s = readJSON(SETTINGS_FILE);
   return Array.isArray(s) ? { ...DEFAULT_SETTINGS } : { ...DEFAULT_SETTINGS, ...s };
@@ -359,6 +364,47 @@ app.delete('/api/labels/:id', requireAuth, requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+// ---- To-do's (losse takenlijst, admin + gebruiker) ----
+app.get('/api/todos', requireAuth, (req, res) => res.json(readTodos()));
+
+app.post('/api/todos', requireAuth, (req, res) => {
+  const { tekst } = req.body || {};
+  if (!tekst || !String(tekst).trim()) return res.status(400).json({ error: 'Tekst is verplicht' });
+  const todos = readTodos();
+  const todo = {
+    id: crypto.randomUUID(),
+    tekst: String(tekst).trim().slice(0, 300),
+    klaar: false,
+    taskId: null,
+    createdBy: req.session.username,
+    createdAt: new Date().toISOString()
+  };
+  todos.push(todo);
+  writeTodos(todos);
+  res.status(201).json(todo);
+});
+
+app.put('/api/todos/:id', requireAuth, (req, res) => {
+  const todos = readTodos();
+  const idx = todos.findIndex(t => t.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'To-do niet gevonden' });
+  const { tekst, klaar, taskId } = req.body || {};
+  if (tekst !== undefined) todos[idx].tekst = String(tekst).trim().slice(0, 300);
+  if (klaar !== undefined) todos[idx].klaar = !!klaar;
+  if (taskId !== undefined) todos[idx].taskId = taskId;
+  writeTodos(todos);
+  res.json(todos[idx]);
+});
+
+app.delete('/api/todos/:id', requireAuth, (req, res) => {
+  let todos = readTodos();
+  const before = todos.length;
+  todos = todos.filter(t => t.id !== req.params.id);
+  if (todos.length === before) return res.status(404).json({ error: 'To-do niet gevonden' });
+  writeTodos(todos);
+  res.json({ ok: true });
+});
+
 // ---- Tijdlijninstellingen (iedereen leest, alleen admin schrijft) ----
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -463,6 +509,11 @@ app.get('/', (req, res) => {
 app.get('/planner', (req, res) => {
   if (!(req.session && req.session.userId)) return res.redirect('/');
   res.sendFile(path.join(__dirname, 'public/planner.html'));
+});
+
+app.get('/todo', (req, res) => {
+  if (!(req.session && req.session.userId)) return res.redirect('/');
+  res.sendFile(path.join(__dirname, 'public/todo.html'));
 });
 
 app.get('/admin', (req, res) => {

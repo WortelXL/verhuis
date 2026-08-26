@@ -3,6 +3,10 @@
 Alle functionele wijzigingen aan de Verhuisplanner. Het huidige versienummer
 is ook zichtbaar in de app zelf (rechtsboven, klik erop voor deze lijst).
 
+## 0.0.9
+- Nieuwe To-do-pagina: losse taken vastleggen en met één klik inplannen op
+  de tijdlijn (titel wordt voorgevuld, jij kiest de datum).
+
 ## 0.0.8
 - Versiebeheer: het versienummer en de changelog zijn nu zichtbaar in de app
   voor ingelogde gebruikers (klik op het versie-label rechtsboven).

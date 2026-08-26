@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verhuisplanner — To-do</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <h1>Verhuisplanner</h1>
+      <span class="eyebrow">to-do</span>
+    </div>
+    <div class="topbar-right">
+      <span class="whoami" id="whoami"></span>
+      <button type="button" class="version-badge" id="version-badge"></button>
+      <a href="/planner" class="btn secondary">Naar tijdlijn</a>
+      <a href="/admin" class="btn secondary" id="admin-link" style="display:none;">Beheer</a>
+      <button class="btn secondary" id="logout-btn">Uitloggen</button>
+    </div>
+  </div>
+
+  <div class="changelog-popover" id="changelog-popover" hidden></div>
+
+  <div class="admin-layout" style="max-width:640px;">
+    <section class="admin-section">
+      <h2>To-do lijst</h2>
+      <p class="section-sub">Snel losse taken vastleggen zonder meteen een datum te kiezen. Klik op "Inplannen →" om een to-do als klus op de tijdlijn te zetten.</p>
+
+      <form id="todo-form" class="inline-form">
+        <div class="field" style="flex:1; min-width:200px;">
+          <label for="todo-tekst">Nieuwe to-do</label>
+          <input type="text" id="todo-tekst" placeholder="Bijv. Energie ommelden" required maxlength="300">
+        </div>
+        <button type="submit" class="btn">Toevoegen</button>
+      </form>
+
+      <div class="todo-list" id="todo-list"></div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/js/todo.js"></script>
+</body>
+</html>

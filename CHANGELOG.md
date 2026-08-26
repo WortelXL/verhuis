@@ -3,6 +3,10 @@
 Alle functionele wijzigingen aan de Verhuisplanner. Het huidige versienummer
 is ook zichtbaar in de app zelf (rechtsboven, klik erop voor deze lijst).
 
+## 0.1.0
+- Klussen en to-do's die als "klaar" zijn gemarkeerd, krijgen nu een ✅ voor
+  de titel — op de tijdlijnbalk, in de rijlabel en in de to-do lijst.
+
 ## 0.0.11
 - Visuele fix: het label "Labels" op de to-do-pagina overlapte met het
   invoerveld erboven.

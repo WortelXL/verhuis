@@ -15,6 +15,7 @@ const APP_VERSION = packageJson.version;
 // Changelog: bij elke functionele wijziging hier een nieuwe regel bovenaan toevoegen
 // en de version in package.json ophogen. Wordt getoond in de app via /api/version.
 const CHANGELOG = [
+  { version: '0.1.0', wijzigingen: ['Klussen en to-do\'s die als "klaar" zijn gemarkeerd, krijgen nu een ✅ voor de titel — op de tijdlijnbalk, in de rijlabel en in de to-do lijst.'] },
   { version: '0.0.11', wijzigingen: ['Visuele fix: het label "Labels" op de to-do-pagina overlapte met het invoerveld erboven.'] },
   { version: '0.0.10', wijzigingen: ['To-do\'s kunnen nu ook labels met icoon krijgen; deze worden automatisch meegenomen bij het inplannen op de tijdlijn.'] },
   { version: '0.0.9', wijzigingen: ['Nieuwe To-do-pagina: losse taken vastleggen en met één klik inplannen op de tijdlijn.'] },

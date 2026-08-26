@@ -150,7 +150,8 @@
     text.className = 'todo-text';
     const taskLabels = (todo.labels || []).map(id => labelMap[id]).filter(Boolean);
     const iconPrefix = taskLabels.length ? taskLabels.map(l => l.icoon).join(' ') + ' ' : '';
-    text.textContent = iconPrefix + todo.tekst;
+    const donePrefix = todo.klaar ? '✅ ' : '';
+    text.textContent = iconPrefix + donePrefix + todo.tekst;
 
     row.appendChild(checkbox);
     row.appendChild(text);

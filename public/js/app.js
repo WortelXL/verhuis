@@ -373,7 +373,7 @@
 
     const titleSpan = document.createElement('span');
     titleSpan.className = 'title-text';
-    titleSpan.textContent = task.titel;
+    titleSpan.textContent = (task.status === 'klaar' ? '✅ ' : '') + task.titel;
     const catLabel = (categoryMap[task.categorie] && categoryMap[task.categorie].naam) || task.categorie;
     const assignedNames = namesFor(task.toegewezenAan);
     const taskLabelNames = (task.labels || []).map(id => labelMap[id]).filter(Boolean).map(l => `${l.icoon} ${l.naam}`);
@@ -434,7 +434,8 @@
     titleEl.className = 'bar-title';
     const taskLabels = (task.labels || []).map(id => labelMap[id]).filter(Boolean);
     const iconPrefix = taskLabels.length ? taskLabels.map(l => l.icoon).join(' ') + ' ' : '';
-    titleEl.textContent = iconPrefix + task.titel;
+    const donePrefix = task.status === 'klaar' ? '✅ ' : '';
+    titleEl.textContent = iconPrefix + donePrefix + task.titel;
     bar.appendChild(titleEl);
 
     const assigned = (task.toegewezenAan || []).map(id => personMap[id]).filter(Boolean);

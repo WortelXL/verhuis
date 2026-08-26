@@ -15,6 +15,7 @@ const APP_VERSION = packageJson.version;
 // Changelog: bij elke functionele wijziging hier een nieuwe regel bovenaan toevoegen
 // en de version in package.json ophogen. Wordt getoond in de app via /api/version.
 const CHANGELOG = [
+  { version: '0.0.11', wijzigingen: ['Visuele fix: het label "Labels" op de to-do-pagina overlapte met het invoerveld erboven.'] },
   { version: '0.0.10', wijzigingen: ['To-do\'s kunnen nu ook labels met icoon krijgen; deze worden automatisch meegenomen bij het inplannen op de tijdlijn.'] },
   { version: '0.0.9', wijzigingen: ['Nieuwe To-do-pagina: losse taken vastleggen en met één klik inplannen op de tijdlijn.'] },
   { version: '0.0.8', wijzigingen: ['Versiebeheer: het versienummer en de changelog zijn nu zichtbaar in de app voor ingelogde gebruikers.'] },

@@ -3,6 +3,10 @@
 Alle functionele wijzigingen aan de Verhuisplanner. Het huidige versienummer
 is ook zichtbaar in de app zelf (rechtsboven, klik erop voor deze lijst).
 
+## 0.0.11
+- Visuele fix: het label "Labels" op de to-do-pagina overlapte met het
+  invoerveld erboven.
+
 ## 0.0.10
 - To-do's kunnen nu ook labels met icoon krijgen (net als klussen). Klik op
   🏷️ bij een to-do om labels te wijzigen; ze worden automatisch meegenomen

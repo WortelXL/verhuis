@@ -15,6 +15,7 @@ const APP_VERSION = packageJson.version;
 // Changelog: bij elke functionele wijziging hier een nieuwe regel bovenaan toevoegen
 // en de version in package.json ophogen. Wordt getoond in de app via /api/version.
 const CHANGELOG = [
+  { version: '0.0.10', wijzigingen: ['To-do\'s kunnen nu ook labels met icoon krijgen; deze worden automatisch meegenomen bij het inplannen op de tijdlijn.'] },
   { version: '0.0.9', wijzigingen: ['Nieuwe To-do-pagina: losse taken vastleggen en met één klik inplannen op de tijdlijn.'] },
   { version: '0.0.8', wijzigingen: ['Versiebeheer: het versienummer en de changelog zijn nu zichtbaar in de app voor ingelogde gebruikers.'] },
   { version: '0.0.7', wijzigingen: ['Labels met eigen icoon: aanmaken, bewerken en verwijderen via Beheer, koppelen aan één of meerdere klussen.'] },
@@ -361,6 +362,17 @@ app.delete('/api/labels/:id', requireAuth, requireAdmin, (req, res) => {
   });
   if (touched) writeTasks(tasks);
 
+  // Verwijder dit label ook van alle to-do's waar het aan hing
+  const todos = readTodos();
+  let todosTouched = false;
+  todos.forEach(t => {
+    if (Array.isArray(t.labels) && t.labels.includes(req.params.id)) {
+      t.labels = t.labels.filter(id => id !== req.params.id);
+      todosTouched = true;
+    }
+  });
+  if (todosTouched) writeTodos(todos);
+
   res.json({ ok: true });
 });
 
@@ -368,12 +380,13 @@ app.delete('/api/labels/:id', requireAuth, requireAdmin, (req, res) => {
 app.get('/api/todos', requireAuth, (req, res) => res.json(readTodos()));
 
 app.post('/api/todos', requireAuth, (req, res) => {
-  const { tekst } = req.body || {};
+  const { tekst, labels } = req.body || {};
   if (!tekst || !String(tekst).trim()) return res.status(400).json({ error: 'Tekst is verplicht' });
   const todos = readTodos();
   const todo = {
     id: crypto.randomUUID(),
     tekst: String(tekst).trim().slice(0, 300),
+    labels: Array.isArray(labels) ? labels.filter(x => typeof x === 'string') : [],
     klaar: false,
     taskId: null,
     createdBy: req.session.username,
@@ -388,10 +401,11 @@ app.put('/api/todos/:id', requireAuth, (req, res) => {
   const todos = readTodos();
   const idx = todos.findIndex(t => t.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'To-do niet gevonden' });
-  const { tekst, klaar, taskId } = req.body || {};
+  const { tekst, klaar, taskId, labels } = req.body || {};
   if (tekst !== undefined) todos[idx].tekst = String(tekst).trim().slice(0, 300);
   if (klaar !== undefined) todos[idx].klaar = !!klaar;
   if (taskId !== undefined) todos[idx].taskId = taskId;
+  if (labels !== undefined && Array.isArray(labels)) todos[idx].labels = labels.filter(x => typeof x === 'string');
   writeTodos(todos);
   res.json(todos[idx]);
 });

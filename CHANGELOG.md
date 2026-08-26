@@ -3,6 +3,11 @@
 Alle functionele wijzigingen aan de Verhuisplanner. Het huidige versienummer
 is ook zichtbaar in de app zelf (rechtsboven, klik erop voor deze lijst).
 
+## 0.0.10
+- To-do's kunnen nu ook labels met icoon krijgen (net als klussen). Klik op
+  🏷️ bij een to-do om labels te wijzigen; ze worden automatisch meegenomen
+  als je de to-do inplant op de tijdlijn.
+
 ## 0.0.9
 - Nieuwe To-do-pagina: losse taken vastleggen en met één klik inplannen op
   de tijdlijn (titel wordt voorgevuld, jij kiest de datum).

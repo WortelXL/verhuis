@@ -298,6 +298,17 @@ a { color: inherit; }
   flex: 0 0 auto;
 }
 
+.todo-item-wrapper { display: flex; flex-direction: column; }
+
+.todo-label-edit {
+  margin: -1px 0 0;
+  padding: 10px 12px;
+  background: rgba(31,58,95,0.04);
+  border: 1px solid var(--line-strong);
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+}
+
 .main-layout {
   display: grid;
   grid-template-columns: 300px 1fr;

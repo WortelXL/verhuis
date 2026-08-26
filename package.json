@@ -1,6 +1,6 @@
 {
   "name": "verhuisplanner",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Klusplanning voor een verhuizing met inlog en schuifbare tijdlijn",
   "main": "server.js",
   "scripts": {

@@ -24,6 +24,9 @@
   }
 
   let todos = [];
+  let labels = [];
+  let labelMap = {};
+  const labelChecklistEl = document.getElementById('todo-label-checklist');
 
   async function init() {
     const me = await api('/api/me');
@@ -37,7 +40,38 @@
       window.location.href = '/';
     });
 
+    await loadLabels();
     await loadTodos();
+  }
+
+  // ---------- Labels ----------
+  async function loadLabels() {
+    labels = await api('/api/labels');
+    labelMap = {};
+    labels.forEach(l => { labelMap[l.id] = l; });
+    buildLabelChecklist(labelChecklistEl, []);
+  }
+
+  function buildLabelChecklist(container, selectedIds) {
+    container.innerHTML = '';
+    if (!labels.length) {
+      container.innerHTML = '<div class="hint">Nog geen labels. Voeg ze toe via Beheer.</div>';
+      return;
+    }
+    labels.forEach(l => {
+      const label = document.createElement('label');
+      label.className = 'person-check-item';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = l.id;
+      cb.checked = (selectedIds || []).includes(l.id);
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(l.icoon + ' ' + l.naam));
+      container.appendChild(label);
+    });
+  }
+  function selectedLabelIds(container) {
+    return Array.from(container.querySelectorAll('input:checked')).map(cb => cb.value);
   }
 
   // ---------- Versiebadge & changelog ----------
@@ -114,10 +148,19 @@
 
     const text = document.createElement('span');
     text.className = 'todo-text';
-    text.textContent = todo.tekst;
+    const taskLabels = (todo.labels || []).map(id => labelMap[id]).filter(Boolean);
+    const iconPrefix = taskLabels.length ? taskLabels.map(l => l.icoon).join(' ') + ' ' : '';
+    text.textContent = iconPrefix + todo.tekst;
 
     row.appendChild(checkbox);
     row.appendChild(text);
+
+    const labelBtn = document.createElement('button');
+    labelBtn.type = 'button';
+    labelBtn.className = 'btn secondary small';
+    labelBtn.textContent = '🏷️';
+    labelBtn.title = 'Labels wijzigen';
+    row.appendChild(labelBtn);
 
     if (todo.taskId) {
       const badge = document.createElement('span');
@@ -150,7 +193,30 @@
     });
     row.appendChild(delBtn);
 
-    return row;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'todo-item-wrapper';
+    wrapper.appendChild(row);
+
+    const editPanel = document.createElement('div');
+    editPanel.className = 'person-checklist todo-label-edit';
+    editPanel.hidden = true;
+    buildLabelChecklist(editPanel, todo.labels || []);
+    editPanel.querySelectorAll('input').forEach(cb => {
+      cb.addEventListener('change', async () => {
+        try {
+          const updated = await api(`/api/todos/${todo.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ labels: selectedLabelIds(editPanel) })
+          });
+          Object.assign(todo, updated);
+          render();
+        } catch (e) { showToast(e.message); }
+      });
+    });
+    labelBtn.addEventListener('click', () => { editPanel.hidden = !editPanel.hidden; });
+    wrapper.appendChild(editPanel);
+
+    return wrapper;
   }
 
   document.getElementById('todo-form').addEventListener('submit', async (e) => {
@@ -159,9 +225,13 @@
     const tekst = input.value.trim();
     if (!tekst) return;
     try {
-      const todo = await api('/api/todos', { method: 'POST', body: JSON.stringify({ tekst }) });
+      const todo = await api('/api/todos', {
+        method: 'POST',
+        body: JSON.stringify({ tekst, labels: selectedLabelIds(labelChecklistEl) })
+      });
       todos.push(todo);
       input.value = '';
+      buildLabelChecklist(labelChecklistEl, []);
       render();
       showToast('To-do toegevoegd');
     } catch (err) {

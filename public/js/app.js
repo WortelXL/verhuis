@@ -741,6 +741,9 @@
       pendingTodoId = todo.id;
       const titelInput = document.getElementById('titel');
       titelInput.value = todo.tekst;
+      if (todo.labels && todo.labels.length) {
+        buildLabelChecklist(labelChecklistEl, todo.labels);
+      }
       titelInput.focus();
       titelInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
       showToast('Kies een datum en klik op "Toevoegen aan tijdlijn" om in te plannen');

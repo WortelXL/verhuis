@@ -70,6 +70,8 @@ APP_USERNAME=admin APP_PASSWORD=test1234 npm start
 - **Labels met icoon**: kies bij het aanmaken of bewerken van een klus één of
   meerdere labels (bijv. 📦 Fragiel, ⚡ Spoed). Labels zelf maak, wijzig en
   verwijder je via de beheerpagina.
+- **Versie & changelog**: rechtsboven in de app staat het huidige
+  versienummer. Klik erop voor een lijst met recente wijzigingen.
 - **Hover & bewerken**: hover over een balk voor de details en notities in
   een tooltip; klik (zonder te slepen) op een balk om hem te bewerken.
 

@@ -17,6 +17,12 @@
     return res.status === 204 ? null : res.json();
   }
 
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+
   let currentUserId = null;
 
   async function init() {
@@ -24,6 +30,7 @@
     if (!me.loggedIn) { window.location.href = '/'; return; }
     if (me.role !== 'admin') { window.location.href = '/planner'; return; }
     document.getElementById('whoami').textContent = `${me.username} (beheerder)`;
+    loadVersion();
 
     document.getElementById('logout-btn').addEventListener('click', async () => {
       await api('/api/logout', { method: 'POST' });
@@ -35,6 +42,32 @@
     await loadPeople();
     await loadUsers();
     await loadCategories();
+  }
+
+  // ---------- Versiebadge & changelog ----------
+  async function loadVersion() {
+    try {
+      const data = await api('/api/version');
+      const badge = document.getElementById('version-badge');
+      const popover = document.getElementById('changelog-popover');
+      if (!badge || !popover) return;
+      badge.textContent = 'v' + data.version;
+      popover.innerHTML = data.changelog.map(entry => `
+        <div class="changelog-entry">
+          <span class="changelog-version">v${escapeHtml(entry.version)}</span>
+          <ul>${entry.wijzigingen.map(w => `<li>${escapeHtml(w)}</li>`).join('')}</ul>
+        </div>
+      `).join('');
+      badge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        popover.hidden = !popover.hidden;
+      });
+      document.addEventListener('click', (e) => {
+        if (!popover.hidden && !popover.contains(e.target) && e.target !== badge) {
+          popover.hidden = true;
+        }
+      });
+    } catch (e) { /* niet kritiek, negeren */ }
   }
 
   // ---------- Labels ----------

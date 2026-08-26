@@ -3,11 +3,26 @@ const session = require('express-session');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const packageJson = require('./package.json');
 
 const APP_USERNAME = process.env.APP_USERNAME || 'admin';
 const APP_PASSWORD = process.env.APP_PASSWORD || 'verhuizen2026';
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 const PORT = process.env.PORT || 3000;
+
+const APP_VERSION = packageJson.version;
+
+// Changelog: bij elke functionele wijziging hier een nieuwe regel bovenaan toevoegen
+// en de version in package.json ophogen. Wordt getoond in de app via /api/version.
+const CHANGELOG = [
+  { version: '0.0.8', wijzigingen: ['Versiebeheer: het versienummer en de changelog zijn nu zichtbaar in de app voor ingelogde gebruikers.'] },
+  { version: '0.0.7', wijzigingen: ['Labels met eigen icoon: aanmaken, bewerken en verwijderen via Beheer, koppelen aan één of meerdere klussen.'] },
+  { version: '0.0.6', wijzigingen: ['Personen toevoegen via Beheer en aan klussen koppelen, zichtbaar als gekleurde initialen op de balk.'] },
+  { version: '0.0.5', wijzigingen: ['Instelbaar tijdlijnbereik via Beheer (vanaf/tot datum).'] },
+  { version: '0.0.4', wijzigingen: ['Hover-tooltip met details en notities; klik op een balk om een klus te bewerken.'] },
+  { version: '0.0.3', wijzigingen: ['Gebruikersbeheer met rollen (beheerder/gebruiker), aanpasbare legenda/categorieën, weeknummers bij elke maandag.'] },
+  { version: '0.0.2', wijzigingen: ['Eerste versie: inlogpagina, sleepbare tijdlijn, Docker-container.'] }
+];
 
 const DATA_DIR = path.join(__dirname, 'data');
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
@@ -129,6 +144,10 @@ app.post('/api/logout', (req, res) => {
 app.get('/api/me', (req, res) => {
   if (!(req.session && req.session.userId)) return res.json({ loggedIn: false });
   res.json({ loggedIn: true, username: req.session.username, role: req.session.role });
+});
+
+app.get('/api/version', requireAuth, (req, res) => {
+  res.json({ version: APP_VERSION, changelog: CHANGELOG });
 });
 
 // ---- Taken API (admin + gebruiker) ----

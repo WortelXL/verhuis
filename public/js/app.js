@@ -209,6 +209,32 @@
     if (adminLink && me.role === 'admin') adminLink.style.display = '';
   }
 
+  // ---------- Versiebadge & changelog ----------
+  async function loadVersion() {
+    try {
+      const data = await api('/api/version');
+      const badge = document.getElementById('version-badge');
+      const popover = document.getElementById('changelog-popover');
+      if (!badge || !popover) return;
+      badge.textContent = 'v' + data.version;
+      popover.innerHTML = data.changelog.map(entry => `
+        <div class="changelog-entry">
+          <span class="changelog-version">v${escapeHtml(entry.version)}</span>
+          <ul>${entry.wijzigingen.map(w => `<li>${escapeHtml(w)}</li>`).join('')}</ul>
+        </div>
+      `).join('');
+      badge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        popover.hidden = !popover.hidden;
+      });
+      document.addEventListener('click', (e) => {
+        if (!popover.hidden && !popover.contains(e.target) && e.target !== badge) {
+          popover.hidden = true;
+        }
+      });
+    } catch (e) { /* niet kritiek, negeren */ }
+  }
+
   async function loadSettings() {
     settings = await api('/api/settings');
   }
@@ -675,6 +701,7 @@
 
   async function init() {
     await loadMe();
+    loadVersion();
     await loadCategories();
     await loadPeople();
     await loadLabels();

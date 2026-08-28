@@ -3,6 +3,10 @@
 Alle functionele wijzigingen aan de Verhuisplanner. Het huidige versienummer
 is ook zichtbaar in de app zelf (rechtsboven, klik erop voor deze lijst).
 
+## 0.2.0
+- Nieuwe Maten-pagina: leg per item (bv. een raam voor gordijnen) een naam
+  vast met los invulbare lengte, breedte en/of hoogte, in cm, m, mm of inch.
+
 ## 0.1.0
 - Klussen en to-do's die als "klaar" zijn gemarkeerd, krijgen nu een ✅ voor
   de titel — op de tijdlijnbalk, in de rijlabel en in de to-do lijst.

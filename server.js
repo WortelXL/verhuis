@@ -15,6 +15,7 @@ const APP_VERSION = packageJson.version;
 // Changelog: bij elke functionele wijziging hier een nieuwe regel bovenaan toevoegen
 // en de version in package.json ophogen. Wordt getoond in de app via /api/version.
 const CHANGELOG = [
+  { version: '0.2.0', wijzigingen: ['Nieuwe Maten-pagina: leg per item (bv. een raam voor gordijnen) een naam vast met los invulbare lengte, breedte en/of hoogte, in cm, m, mm of inch.'] },
   { version: '0.1.0', wijzigingen: ['Klussen en to-do\'s die als "klaar" zijn gemarkeerd, krijgen nu een ✅ voor de titel — op de tijdlijnbalk, in de rijlabel en in de to-do lijst.'] },
   { version: '0.0.11', wijzigingen: ['Visuele fix: het label "Labels" op de to-do-pagina overlapte met het invoerveld erboven.'] },
   { version: '0.0.10', wijzigingen: ['To-do\'s kunnen nu ook labels met icoon krijgen; deze worden automatisch meegenomen bij het inplannen op de tijdlijn.'] },
@@ -36,12 +37,14 @@ const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const PEOPLE_FILE = path.join(DATA_DIR, 'people.json');
 const LABELS_FILE = path.join(DATA_DIR, 'labels.json');
 const TODOS_FILE = path.join(DATA_DIR, 'todos.json');
+const METINGEN_FILE = path.join(DATA_DIR, 'metingen.json');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(TASKS_FILE)) fs.writeFileSync(TASKS_FILE, JSON.stringify([], null, 2));
 if (!fs.existsSync(PEOPLE_FILE)) fs.writeFileSync(PEOPLE_FILE, JSON.stringify([], null, 2));
 if (!fs.existsSync(LABELS_FILE)) fs.writeFileSync(LABELS_FILE, JSON.stringify([], null, 2));
 if (!fs.existsSync(TODOS_FILE)) fs.writeFileSync(TODOS_FILE, JSON.stringify([], null, 2));
+if (!fs.existsSync(METINGEN_FILE)) fs.writeFileSync(METINGEN_FILE, JSON.stringify([], null, 2));
 
 const DEFAULT_SETTINGS = { rangeStart: null, rangeEnd: null };
 if (!fs.existsSync(SETTINGS_FILE)) {
@@ -103,6 +106,8 @@ const readLabels = () => readJSON(LABELS_FILE);
 const writeLabels = (l) => writeJSON(LABELS_FILE, l);
 const readTodos = () => readJSON(TODOS_FILE);
 const writeTodos = (t) => writeJSON(TODOS_FILE, t);
+const readMetingen = () => readJSON(METINGEN_FILE);
+const writeMetingen = (m) => writeJSON(METINGEN_FILE, m);
 const readSettings = () => {
   const s = readJSON(SETTINGS_FILE);
   return Array.isArray(s) ? { ...DEFAULT_SETTINGS } : { ...DEFAULT_SETTINGS, ...s };
@@ -421,6 +426,77 @@ app.delete('/api/todos/:id', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+// ---- Maten (afmetingen, bv. gordijnen/ramen; admin + gebruiker) ----
+const EENHEDEN = ['cm', 'm', 'mm', 'inch'];
+
+function parseMaat(val) {
+  if (val === undefined || val === null || val === '') return null;
+  const n = Number(val);
+  if (Number.isNaN(n)) return undefined; // ongeldig
+  return n;
+}
+
+app.get('/api/metingen', requireAuth, (req, res) => res.json(readMetingen()));
+
+app.post('/api/metingen', requireAuth, (req, res) => {
+  const { naam, eenheid, lengte, breedte, hoogte, notities } = req.body || {};
+  if (!naam || !String(naam).trim()) return res.status(400).json({ error: 'Naam is verplicht' });
+  const gekozenEenheid = EENHEDEN.includes(eenheid) ? eenheid : 'cm';
+  const l = parseMaat(lengte), b = parseMaat(breedte), h = parseMaat(hoogte);
+  if (l === undefined || b === undefined || h === undefined) {
+    return res.status(400).json({ error: 'Lengte, breedte en hoogte moeten getallen zijn' });
+  }
+  if (l === null && b === null && h === null) {
+    return res.status(400).json({ error: 'Vul minstens één afmeting in (lengte, breedte of hoogte)' });
+  }
+  const metingen = readMetingen();
+  const meting = {
+    id: crypto.randomUUID(),
+    naam: String(naam).trim().slice(0, 100),
+    eenheid: gekozenEenheid,
+    lengte: l, breedte: b, hoogte: h,
+    notities: notities ? String(notities).slice(0, 300) : '',
+    createdBy: req.session.username,
+    createdAt: new Date().toISOString()
+  };
+  metingen.push(meting);
+  writeMetingen(metingen);
+  res.status(201).json(meting);
+});
+
+app.put('/api/metingen/:id', requireAuth, (req, res) => {
+  const metingen = readMetingen();
+  const idx = metingen.findIndex(m => m.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Meting niet gevonden' });
+  const { naam, eenheid, lengte, breedte, hoogte, notities } = req.body || {};
+  if (naam !== undefined) {
+    if (!String(naam).trim()) return res.status(400).json({ error: 'Naam mag niet leeg zijn' });
+    metingen[idx].naam = String(naam).trim().slice(0, 100);
+  }
+  if (eenheid !== undefined) {
+    if (!EENHEDEN.includes(eenheid)) return res.status(400).json({ error: 'Ongeldige eenheid' });
+    metingen[idx].eenheid = eenheid;
+  }
+  for (const [key, val] of [['lengte', lengte], ['breedte', breedte], ['hoogte', hoogte]]) {
+    if (val === undefined) continue;
+    const parsed = parseMaat(val);
+    if (parsed === undefined) return res.status(400).json({ error: `${key} moet een getal zijn` });
+    metingen[idx][key] = parsed;
+  }
+  if (notities !== undefined) metingen[idx].notities = String(notities).slice(0, 300);
+  writeMetingen(metingen);
+  res.json(metingen[idx]);
+});
+
+app.delete('/api/metingen/:id', requireAuth, (req, res) => {
+  let metingen = readMetingen();
+  const before = metingen.length;
+  metingen = metingen.filter(m => m.id !== req.params.id);
+  if (metingen.length === before) return res.status(404).json({ error: 'Meting niet gevonden' });
+  writeMetingen(metingen);
+  res.json({ ok: true });
+});
+
 // ---- Tijdlijninstellingen (iedereen leest, alleen admin schrijft) ----
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -530,6 +606,11 @@ app.get('/planner', (req, res) => {
 app.get('/todo', (req, res) => {
   if (!(req.session && req.session.userId)) return res.redirect('/');
   res.sendFile(path.join(__dirname, 'public/todo.html'));
+});
+
+app.get('/maten', (req, res) => {
+  if (!(req.session && req.session.userId)) return res.redirect('/');
+  res.sendFile(path.join(__dirname, 'public/maten.html'));
 });
 
 app.get('/admin', (req, res) => {

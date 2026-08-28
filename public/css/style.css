@@ -865,6 +865,8 @@ a { color: inherit; }
   outline: none;
 }
 
+.maten-number { width: 70px; text-align: right; }
+
 .actions-cell {
   display: flex;
   gap: 6px;

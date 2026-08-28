@@ -28,10 +28,17 @@ voor beheerders).
    docker compose up -d --build
    ```
 
-3. Ga naar **http://localhost:3000** en log in.
+3. Ga naar **http://localhost** en log in.
 
 Je taken worden bewaard in de map `./data` naast dit project, ook als je de
 container opnieuw opbouwt.
+
+> **Let op:** de app draait nu standaard op poort 80 (de gewone webpoort, dus
+> geen `:3000` meer nodig in de URL). Draait er op je server al iets anders
+> op poort 80 (bijv. een reverse proxy of een andere website), dan geeft
+> `docker compose up` een foutmelding dat de poort al in gebruik is. Wijzig
+> in dat geval het linkerdeel van de poort-mapping in `docker-compose.yml`,
+> bijvoorbeeld `- "8080:80"` om de app bereikbaar te maken via poort 8080.
 
 ## Starten met alleen Docker (zonder compose)
 
@@ -39,7 +46,7 @@ container opnieuw opbouwt.
 docker build -t verhuisplanner .
 docker run -d \
   --name verhuisplanner \
-  -p 3000:3000 \
+  -p 80:80 \
   -e APP_USERNAME=admin \
   -e APP_PASSWORD=verander-dit-wachtwoord \
   -e SESSION_SECRET=iets-random-en-geheim \

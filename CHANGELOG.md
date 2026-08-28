@@ -3,6 +3,11 @@
 Alle functionele wijzigingen aan de Verhuisplanner. Het huidige versienummer
 is ook zichtbaar in de app zelf (rechtsboven, klik erop voor deze lijst).
 
+## 0.2.1
+- Docker-container luistert nu standaard op poort 80 in plaats van 3000,
+  zodat de app zonder poortnummer in de URL bereikbaar is
+  (`http://localhost` in plaats van `http://localhost:3000`).
+
 ## 0.2.0
 - Nieuwe Maten-pagina: leg per item (bv. een raam voor gordijnen) een naam
   vast met los invulbare lengte, breedte en/of hoogte, in cm, m, mm of inch.

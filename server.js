@@ -8,13 +8,14 @@ const packageJson = require('./package.json');
 const APP_USERNAME = process.env.APP_USERNAME || 'admin';
 const APP_PASSWORD = process.env.APP_PASSWORD || 'verhuizen2026';
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 80;
 
 const APP_VERSION = packageJson.version;
 
 // Changelog: bij elke functionele wijziging hier een nieuwe regel bovenaan toevoegen
 // en de version in package.json ophogen. Wordt getoond in de app via /api/version.
 const CHANGELOG = [
+  { version: '0.2.1', wijzigingen: ['Docker-container luistert nu standaard op poort 80 in plaats van 3000, zodat de app zonder poortnummer in de URL bereikbaar is.'] },
   { version: '0.2.0', wijzigingen: ['Nieuwe Maten-pagina: leg per item (bv. een raam voor gordijnen) een naam vast met los invulbare lengte, breedte en/of hoogte, in cm, m, mm of inch.'] },
   { version: '0.1.0', wijzigingen: ['Klussen en to-do\'s die als "klaar" zijn gemarkeerd, krijgen nu een ✅ voor de titel — op de tijdlijnbalk, in de rijlabel en in de to-do lijst.'] },
   { version: '0.0.11', wijzigingen: ['Visuele fix: het label "Labels" op de to-do-pagina overlapte met het invoerveld erboven.'] },

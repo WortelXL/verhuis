@@ -91,7 +91,7 @@
     if (!metingen.length) {
       const tr = document.createElement('tr');
       const td = document.createElement('td');
-      td.colSpan = 7;
+      td.colSpan = 8;
       td.className = 'empty-state';
       td.textContent = 'Nog geen maten. Voeg er hieronder een toe.';
       tr.appendChild(td);
@@ -143,6 +143,15 @@
         } catch (e) { showToast(e.message); hoogteInput.value = m.hoogte ?? ''; }
       });
       tdHoogte.appendChild(hoogteInput);
+
+      const tdDiepte = document.createElement('td');
+      const diepteInput = numberInput(m.diepte, async () => {
+        try {
+          const updated = await api(`/api/metingen/${m.id}`, { method: 'PUT', body: JSON.stringify({ diepte: diepteInput.value }) });
+          Object.assign(m, updated);
+        } catch (e) { showToast(e.message); diepteInput.value = m.diepte ?? ''; }
+      });
+      tdDiepte.appendChild(diepteInput);
 
       const tdEenheid = document.createElement('td');
       const eenheidSelect = document.createElement('select');
@@ -197,6 +206,7 @@
       tr.appendChild(tdLengte);
       tr.appendChild(tdBreedte);
       tr.appendChild(tdHoogte);
+      tr.appendChild(tdDiepte);
       tr.appendChild(tdEenheid);
       tr.appendChild(tdNotities);
       tr.appendChild(tdActions);
@@ -213,6 +223,7 @@
       lengte: document.getElementById('new-maten-lengte').value,
       breedte: document.getElementById('new-maten-breedte').value,
       hoogte: document.getElementById('new-maten-hoogte').value,
+      diepte: document.getElementById('new-maten-diepte').value,
       eenheid: document.getElementById('new-maten-eenheid').value,
       notities: document.getElementById('new-maten-notities').value.trim()
     };

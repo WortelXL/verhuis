@@ -3,6 +3,10 @@
 Alle functionele wijzigingen aan de Verhuisplanner. Het huidige versienummer
 is ook zichtbaar in de app zelf (rechtsboven, klik erop voor deze lijst).
 
+## 0.2.2
+- Maten-pagina: er is nu ook een veld "Diepte" naast lengte, breedte en
+  hoogte.
+
 ## 0.2.1
 - Docker-container luistert nu standaard op poort 80 in plaats van 3000,
   zodat de app zonder poortnummer in de URL bereikbaar is

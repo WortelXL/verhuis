@@ -15,6 +15,7 @@ const APP_VERSION = packageJson.version;
 // Changelog: bij elke functionele wijziging hier een nieuwe regel bovenaan toevoegen
 // en de version in package.json ophogen. Wordt getoond in de app via /api/version.
 const CHANGELOG = [
+  { version: '0.2.2', wijzigingen: ['Maten-pagina: er is nu ook een veld "Diepte" naast lengte, breedte en hoogte.'] },
   { version: '0.2.1', wijzigingen: ['Docker-container luistert nu standaard op poort 80 in plaats van 3000, zodat de app zonder poortnummer in de URL bereikbaar is.'] },
   { version: '0.2.0', wijzigingen: ['Nieuwe Maten-pagina: leg per item (bv. een raam voor gordijnen) een naam vast met los invulbare lengte, breedte en/of hoogte, in cm, m, mm of inch.'] },
   { version: '0.1.0', wijzigingen: ['Klussen en to-do\'s die als "klaar" zijn gemarkeerd, krijgen nu een ✅ voor de titel — op de tijdlijnbalk, in de rijlabel en in de to-do lijst.'] },
@@ -440,22 +441,22 @@ function parseMaat(val) {
 app.get('/api/metingen', requireAuth, (req, res) => res.json(readMetingen()));
 
 app.post('/api/metingen', requireAuth, (req, res) => {
-  const { naam, eenheid, lengte, breedte, hoogte, notities } = req.body || {};
+  const { naam, eenheid, lengte, breedte, hoogte, diepte, notities } = req.body || {};
   if (!naam || !String(naam).trim()) return res.status(400).json({ error: 'Naam is verplicht' });
   const gekozenEenheid = EENHEDEN.includes(eenheid) ? eenheid : 'cm';
-  const l = parseMaat(lengte), b = parseMaat(breedte), h = parseMaat(hoogte);
-  if (l === undefined || b === undefined || h === undefined) {
-    return res.status(400).json({ error: 'Lengte, breedte en hoogte moeten getallen zijn' });
+  const l = parseMaat(lengte), b = parseMaat(breedte), h = parseMaat(hoogte), d = parseMaat(diepte);
+  if (l === undefined || b === undefined || h === undefined || d === undefined) {
+    return res.status(400).json({ error: 'Lengte, breedte, hoogte en diepte moeten getallen zijn' });
   }
-  if (l === null && b === null && h === null) {
-    return res.status(400).json({ error: 'Vul minstens één afmeting in (lengte, breedte of hoogte)' });
+  if (l === null && b === null && h === null && d === null) {
+    return res.status(400).json({ error: 'Vul minstens één afmeting in (lengte, breedte, hoogte of diepte)' });
   }
   const metingen = readMetingen();
   const meting = {
     id: crypto.randomUUID(),
     naam: String(naam).trim().slice(0, 100),
     eenheid: gekozenEenheid,
-    lengte: l, breedte: b, hoogte: h,
+    lengte: l, breedte: b, hoogte: h, diepte: d,
     notities: notities ? String(notities).slice(0, 300) : '',
     createdBy: req.session.username,
     createdAt: new Date().toISOString()
@@ -469,7 +470,7 @@ app.put('/api/metingen/:id', requireAuth, (req, res) => {
   const metingen = readMetingen();
   const idx = metingen.findIndex(m => m.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Meting niet gevonden' });
-  const { naam, eenheid, lengte, breedte, hoogte, notities } = req.body || {};
+  const { naam, eenheid, lengte, breedte, hoogte, diepte, notities } = req.body || {};
   if (naam !== undefined) {
     if (!String(naam).trim()) return res.status(400).json({ error: 'Naam mag niet leeg zijn' });
     metingen[idx].naam = String(naam).trim().slice(0, 100);
@@ -478,7 +479,7 @@ app.put('/api/metingen/:id', requireAuth, (req, res) => {
     if (!EENHEDEN.includes(eenheid)) return res.status(400).json({ error: 'Ongeldige eenheid' });
     metingen[idx].eenheid = eenheid;
   }
-  for (const [key, val] of [['lengte', lengte], ['breedte', breedte], ['hoogte', hoogte]]) {
+  for (const [key, val] of [['lengte', lengte], ['breedte', breedte], ['hoogte', hoogte], ['diepte', diepte]]) {
     if (val === undefined) continue;
     const parsed = parseMaat(val);
     if (parsed === undefined) return res.status(400).json({ error: `${key} moet een getal zijn` });

@@ -81,8 +81,8 @@ APP_USERNAME=admin APP_PASSWORD=test1234 npm start
   versienummer. Klik erop voor een lijst met recente wijzigingen.
 - **Maten**: aparte pagina (via de knop "Maten") om afmetingen vast te
   leggen, bijvoorbeeld een raam voor gordijnen. Vul een naam in, en daarna
-  losse invoervelden voor lengte, breedte en hoogte (je hoeft niet alle drie
-  in te vullen) met een eenheid naar keuze (cm, m, mm, inch).
+  losse invoervelden voor lengte, breedte, hoogte en diepte (je hoeft niet
+  alle vier in te vullen) met een eenheid naar keuze (cm, m, mm, inch).
 - **To-do lijst**: aparte pagina (via de knop "To-do") om losse taken snel
   vast te leggen zonder meteen een datum te kiezen. Je kunt er ook labels
   met icoon aan hangen (klik op 🏷️ bij een to-do om ze te wijzigen). Klik op
